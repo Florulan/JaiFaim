@@ -1,7 +1,98 @@
-// Page placeholder
-const ParametresPage = () => (
-  <div className="flex flex-col items-center justify-center min-h-screen">
-    <p className="text-muted-foreground">ParametresPage — à implémenter</p>
-  </div>
-)
-export default ParametresPage
+import { useState, useEffect } from 'react'
+import { Eye, EyeOff, Check, Trash2 } from 'lucide-react'
+import { getApiKey, saveApiKey, clearApiKey } from '../services/claudeService'
+
+export default function ParametresPage() {
+  const [apiKey, setApiKey] = useState('')
+  const [showKey, setShowKey] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [hasKey, setHasKey] = useState(false)
+
+  useEffect(() => {
+    const key = getApiKey()
+    if (key) {
+      setHasKey(true)
+      setApiKey(key)
+    }
+  }, [])
+
+  const handleSave = () => {
+    if (!apiKey.trim()) return
+    saveApiKey(apiKey.trim())
+    setHasKey(true)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }
+
+  const handleClear = () => {
+    clearApiKey()
+    setApiKey('')
+    setHasKey(false)
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="sticky top-0 bg-background z-10 px-4 pt-safe">
+        <div className="py-4">
+          <h1 className="text-xl font-bold text-foreground">Parametres</h1>
+        </div>
+      </div>
+
+      <div className="px-4 space-y-6 pb-8">
+        <section className="space-y-3">
+          <div>
+            <h2 className="font-semibold text-foreground">Cle API Anthropic</h2>
+            <p className="text-xs text-muted-foreground mt-1">
+              Necessaire pour la generation de recettes par IA. Stockee uniquement sur cet appareil.
+            </p>
+          </div>
+
+          {hasKey && (
+            <div className="flex items-center gap-2 bg-accent/10 border border-accent/20 rounded-2xl px-4 py-3">
+              <Check size={16} className="text-accent flex-shrink-0" />
+              <p className="text-sm text-accent font-medium">Cle API configuree</p>
+            </div>
+          )}
+
+          <div className="relative">
+            <input
+              type={showKey ? 'text' : 'password'}
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="sk-ant-..."
+              className="w-full border border-border rounded-2xl bg-card px-4 py-3 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+            <button
+              onClick={() => setShowKey(!showKey)}
+              className="absolute right-4 top-3.5 text-muted-foreground"
+            >
+              {showKey ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={handleSave}
+              disabled={!apiKey.trim()}
+              className="flex-1 py-3 rounded-2xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-50"
+            >
+              {saved ? 'Enregistree !' : 'Enregistrer'}
+            </button>
+            {hasKey && (
+              <button
+                onClick={handleClear}
+                className="p-3 rounded-2xl border border-border text-muted-foreground hover:text-destructive"
+              >
+                <Trash2 size={18} />
+              </button>
+            )}
+          </div>
+
+          <p className="text-xs text-muted-foreground">
+            Obtiens une cle sur console.anthropic.com. 5$ de credits suffisent pour des mois d'utilisation.
+          </p>
+        </section>
+      </div>
+    </div>
+  )
+}
