@@ -71,7 +71,11 @@ export async function generateRecipe(
   const text = data.content?.[0]?.text ?? ''
 
   try {
-    const parsed = JSON.parse(text)
+    const clean = text
+      .replace(/```json/g, '')
+      .replace(/```/g, '')
+      .trim()
+    const parsed = JSON.parse(clean)
     return {
       name: parsed.name ?? 'Recette sans nom',
       emoji: parsed.emoji ?? '🍽️',
