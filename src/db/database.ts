@@ -1,4 +1,4 @@
-import Dexie, { type Table } from 'dexie'
+﻿import Dexie, { type Table } from 'dexie'
 import type { Recipe, MealSlot, UserProfile } from '../types'
 
 class EpicurienDatabase extends Dexie {

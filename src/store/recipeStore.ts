@@ -1,4 +1,4 @@
-import { create } from 'zustand'
+﻿import { create } from 'zustand'
 import type { Recipe, RecipeTag } from '../types'
 import {
   createRecipe,
@@ -31,7 +31,7 @@ export const useRecipeStore = create<RecipeStore>((set, get) => ({
     const { searchQuery, activeTag } = get()
     let results = await searchRecipes(searchQuery)
     if (activeTag) {
-      results = results.filter((r) => r.tags.includes(activeTag))
+      results = results.filter((r: Recipe) => r.tags.includes(activeTag))
     }
     set({ recipes: results, isLoading: false })
   },
