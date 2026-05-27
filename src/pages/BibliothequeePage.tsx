@@ -1,8 +1,9 @@
-﻿import { useEffect, useState } from 'react'
-import { Plus, Search, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Plus, Search, X, Sparkles } from 'lucide-react'
 import { useRecipeStore } from '../store/recipeStore'
 import { RecetteCard } from '../components/RecetteCard'
 import { RecetteForm } from '../components/RecetteForm'
+import { AISaisieDrawer } from '../components/AISaisieDrawer'
 import { RECIPE_TAGS, RECIPE_TAG_LABELS, type RecipeTag } from '../types'
 import type { Recipe } from '../types'
 
@@ -11,6 +12,7 @@ type RecipeFormData = Omit<Recipe, 'id' | 'created_at' | 'updated_at'>
 export default function BibliothequeePage() {
   const { recipes, isLoading, searchQuery, activeTag, loadRecipes, addRecipe, setSearchQuery, setActiveTag } = useRecipeStore()
   const [showForm, setShowForm] = useState(false)
+  const [showAI, setShowAI] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -28,6 +30,16 @@ export default function BibliothequeePage() {
     })
     setIsSubmitting(false)
     setShowForm(false)
+    setShowAI(false)
+  }
+
+  if (showAI) {
+    return (
+      <AISaisieDrawer
+        onClose={() => setShowAI(false)}
+        onSave={handleAddRecipe}
+      />
+    )
   }
 
   if (showForm) {
@@ -55,13 +67,22 @@ export default function BibliothequeePage() {
       <div className="sticky top-0 bg-background z-10 px-4 pt-safe">
         <div className="py-4 flex items-center justify-between">
           <h1 className="text-xl font-bold text-foreground">Mes recettes</h1>
-          <button
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-1.5 bg-primary text-primary-foreground px-4 py-2 rounded-2xl text-sm font-semibold"
-          >
-            <Plus size={16} /> Ajouter
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowAI(true)}
+              className="flex items-center gap-1.5 bg-accent text-accent-foreground px-3 py-2 rounded-2xl text-sm font-semibold"
+            >
+              <Sparkles size={15} /> IA
+            </button>
+            <button
+              onClick={() => setShowForm(true)}
+              className="flex items-center gap-1.5 bg-primary text-primary-foreground px-3 py-2 rounded-2xl text-sm font-semibold"
+            >
+              <Plus size={15} /> Manuel
+            </button>
+          </div>
         </div>
+
         <div className="relative mb-3">
           <Search size={16} className="absolute left-3 top-3 text-muted-foreground" />
           <input
@@ -77,10 +98,14 @@ export default function BibliothequeePage() {
             </button>
           )}
         </div>
+
         <div className="flex gap-2 overflow-x-auto pb-3">
           <button
             onClick={() => setActiveTag(null)}
-            className={"flex-shrink-0 text-xs px-3 py-1.5 rounded-full border transition-colors " + (activeTag === null ? 'bg-primary text-primary-foreground border-primary' : 'bg-card text-muted-foreground border-border')}
+            className={"flex-shrink-0 text-xs px-3 py-1.5 rounded-full border transition-colors " +
+              (activeTag === null
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'bg-card text-muted-foreground border-border')}
           >
             Toutes
           </button>
@@ -88,13 +113,17 @@ export default function BibliothequeePage() {
             <button
               key={tag}
               onClick={() => setActiveTag(activeTag === tag ? null : tag as RecipeTag)}
-              className={"flex-shrink-0 text-xs px-3 py-1.5 rounded-full border transition-colors " + (activeTag === tag ? 'bg-primary text-primary-foreground border-primary' : 'bg-card text-muted-foreground border-border')}
+              className={"flex-shrink-0 text-xs px-3 py-1.5 rounded-full border transition-colors " +
+                (activeTag === tag
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-card text-muted-foreground border-border')}
             >
               {RECIPE_TAG_LABELS[tag]}
             </button>
           ))}
         </div>
       </div>
+
       <div className="px-4 pb-4">
         {isLoading ? (
           <div className="flex justify-center py-16">
