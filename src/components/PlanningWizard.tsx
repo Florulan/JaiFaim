@@ -40,7 +40,7 @@ export function PlanningWizard({ weekStart, dates, onClose, onValidate }: Planni
 
   const isSlotSelected = (date: string, mealType: 'lunch' | 'dinner') =>
     selectedSlots.some((s) => s.date === date && s.mealType === mealType)
-  
+
   const goToStep2 = async () => {
     const recipes = await getAllRecipes()
     setAllRecipes(recipes)
@@ -107,7 +107,7 @@ export function PlanningWizard({ weekStart, dates, onClose, onValidate }: Planni
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
+        <div className="overflow-y-auto px-4 py-4 space-y-2" style={{maxHeight: 'calc(100vh - 180px)'}}>
           {dates.map((date) => {
             const { day, num } = formatDayLabel(date)
             return (
