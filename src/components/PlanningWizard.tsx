@@ -94,7 +94,7 @@ export function PlanningWizard({ weekStart, dates, onClose, onValidate }: Planni
   if (step === 1) {
     return (
       <div className="fixed inset-0 bg-background z-50 flex flex-col">
-        <div className="sticky top-0 bg-background border-b border-border px-4 py-4 flex items-center gap-3">
+        <div className="shrink-0 bg-background border-b border-border px-4 py-4 flex items-center gap-3">
           <button onClick={onClose} className="p-2 -ml-2 text-muted-foreground"><X size={20} /></button>
           <div className="flex-1">
             <h2 className="font-semibold text-foreground">Planifier ma semaine</h2>
@@ -107,7 +107,7 @@ export function PlanningWizard({ weekStart, dates, onClose, onValidate }: Planni
           </div>
         </div>
 
-        <div className="overflow-y-auto px-4 py-4 space-y-2" style={{maxHeight: 'calc(100vh - 180px)'}}>
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2 min-h-0">
           {dates.map((date) => {
             const { day, num } = formatDayLabel(date)
             return (
@@ -140,7 +140,7 @@ export function PlanningWizard({ weekStart, dates, onClose, onValidate }: Planni
           })}
         </div>
 
-        <div className="px-4 py-4 border-t border-border">
+        <div className="shrink-0 px-4 py-4 border-t border-border bg-background">
           <p className="text-xs text-muted-foreground text-center mb-3">
             {selectedSlots.length} repas selectionne{selectedSlots.length > 1 ? 's' : ''}
           </p>
