@@ -79,8 +79,16 @@ export default function RecetteDetailPage() {
         </div>
       </div>
 
-      <div className="h-40 bg-secondary flex items-center justify-center">
-        <span className="text-7xl">{recipe.emoji}</span>
+      <div className="h-48 bg-secondary flex items-center justify-center overflow-hidden">
+        {recipe.photo_url ? (
+          <img
+            src={recipe.photo_url}
+            alt={recipe.name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <span className="text-7xl">{recipe.emoji}</span>
+        )}
       </div>
 
       <div className="px-4 py-5 space-y-6">

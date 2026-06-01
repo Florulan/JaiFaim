@@ -17,13 +17,21 @@ export function RecetteCard({ recipe, className }: RecetteCardProps) {
     <button
       onClick={() => navigate(`/recette/${recipe.id}`)}
       className={cn(
-        'bg-card rounded-2xl shadow-sm border border-border text-left w-full',
+        'bg-card rounded-2xl shadow-sm border border-border text-left w-full overflow-hidden',
         'active:scale-95 transition-transform duration-100',
         className
       )}
     >
-      <div className="h-32 bg-secondary rounded-t-2xl flex items-center justify-center">
-        <span className="text-5xl">{recipe.emoji}</span>
+      <div className="h-32 bg-secondary rounded-t-2xl flex items-center justify-center overflow-hidden">
+        {recipe.photo_url ? (
+          <img
+            src={recipe.photo_url}
+            alt={recipe.name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <span className="text-5xl">{recipe.emoji}</span>
+        )}
       </div>
 
       <div className="p-3 space-y-2">

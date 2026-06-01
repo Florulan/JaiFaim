@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Plus, Trash2, ChevronDown } from 'lucide-react'
+import { Plus, Trash2, ChevronDown, Camera, X } from 'lucide-react'
 import type { Recipe, Ingredient, RecipeTag, Unit } from '../types'
 import { RECIPE_TAGS, RECIPE_TAG_LABELS, UNIT_LABELS } from '../types'
 import { cn } from '../lib/utils'
+
 
 interface RecetteFormProps {
   initial?: Partial<Recipe>
@@ -39,6 +40,20 @@ export function RecetteForm({ initial, onSubmit, onCancel, isLoading }: RecetteF
     initial?.macros?.confidence ?? 'medium'
   )
   const [notes, setNotes] = useState(initial?.notes ?? '')
+  const [photoPreview, setPhotoPreview] = useState<string | null>(initial?.photo_url ?? null)
+  const [photoUrl, setPhotoUrl] = useState<string | null>(initial?.photo_url ?? null)
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result as string
+      setPhotoPreview(result)
+      setPhotoUrl(result)
+    }
+    reader.readAsDataURL(file)
+  }
 
   const updateIngredient = (i: number, field: keyof Ingredient, value: string | number | null) => {
     setIngredients((prev) => prev.map((ing, idx) => idx === i ? { ...ing, [field]: value } : ing))
@@ -61,7 +76,7 @@ export function RecetteForm({ initial, onSubmit, onCancel, isLoading }: RecetteF
     onSubmit({
       name: name.trim(),
       emoji,
-      photo_url: null,
+      photo_url: photoUrl,
       prep_time: prepTime,
       cook_time: cookTime,
       servings,
@@ -192,38 +207,51 @@ export function RecetteForm({ initial, onSubmit, onCancel, isLoading }: RecetteF
       </section>
 
       <section className="space-y-3">
-        <label className="block text-sm font-semibold text-foreground">Étapes</label>
-        <div className="space-y-2">
-          {steps.map((step, i) => (
-            <div key={i} className="flex gap-2 items-start">
-              <span className="mt-2.5 w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center flex-shrink-0 font-semibold">
-                {i + 1}
-              </span>
-              <textarea
-                value={step}
-                onChange={(e) => updateStep(i, e.target.value)}
-                placeholder={`Étape ${i + 1}...`}
-                rows={2}
-                className="flex-1 border border-border rounded-xl bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-              />
+        <label className="block text-sm font-semibold text-foreground">Recette</label>
+        
+        {/* Photo */}
+        <div className="relative h-40 bg-secondary rounded-2xl overflow-hidden flex items-center justify-center">
+          {photoPreview ? (
+            <>
+              <img src={photoPreview} alt="preview" className="w-full h-full object-cover" />
               <button
                 type="button"
-                onClick={() => removeStep(i)}
-                disabled={steps.length === 1}
-                className="mt-2 p-1.5 text-muted-foreground hover:text-destructive disabled:opacity-30"
+                onClick={() => { setPhotoPreview(null); setPhotoUrl(null) }}
+                className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1"
               >
-                <Trash2 size={16} />
+                <X size={14} />
               </button>
-            </div>
-          ))}
+            </>
+          ) : (
+            <label className="flex flex-col items-center gap-2 cursor-pointer text-muted-foreground hover:text-foreground transition-colors">
+              <Camera size={28} />
+              <span className="text-xs font-medium">Ajouter une photo</span>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handlePhotoChange}
+              />
+            </label>
+          )}
         </div>
-        <button
-          type="button"
-          onClick={addStep}
-          className="flex items-center gap-1.5 text-sm text-primary font-medium"
-        >
-          <Plus size={16} /> Ajouter une étape
-        </button>
+
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={emoji}
+            onChange={(e) => setEmoji(e.target.value)}
+            className="w-14 text-2xl text-center border border-border rounded-xl bg-card p-2"
+            maxLength={2}
+          />
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Nom de la recette"
+            className="flex-1 border border-border rounded-xl bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
       </section>
 
       <section className="space-y-3">
