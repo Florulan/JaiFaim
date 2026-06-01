@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { Plus, Trash2, ChevronDown } from 'lucide-react'
 import type { Recipe, Ingredient, RecipeTag, Unit } from '../types'
 import { RECIPE_TAGS, RECIPE_TAG_LABELS, UNIT_LABELS } from '../types'
@@ -22,7 +22,7 @@ const UNITS: Unit[] = ['g', 'kg', 'ml', 'cl', 'l', 'cas', 'cac', 'piece', 'tranc
 
 export function RecetteForm({ initial, onSubmit, onCancel, isLoading }: RecetteFormProps) {
   const [name, setName] = useState(initial?.name ?? '')
-  const [emoji, setEmoji] = useState(initial?.emoji ?? '')
+  const [emoji, setEmoji] = useState(initial?.emoji ?? '🍽️')
   const [prepTime, setPrepTime] = useState(initial?.prep_time ?? 10)
   const [cookTime, setCookTime] = useState(initial?.cook_time ?? 20)
   const [servings, setServings] = useState(initial?.servings ?? 2)
@@ -75,6 +75,7 @@ export function RecetteForm({ initial, onSubmit, onCancel, isLoading }: RecetteF
 
   return (
     <div className="space-y-6 pb-8">
+
       <section className="space-y-3">
         <label className="block text-sm font-semibold text-foreground">Recette</label>
         <div className="flex gap-2">
@@ -139,7 +140,7 @@ export function RecetteForm({ initial, onSubmit, onCancel, isLoading }: RecetteF
       </section>
 
       <section className="space-y-3">
-        <label className="block text-sm font-semibold text-foreground">Ingredients</label>
+        <label className="block text-sm font-semibold text-foreground">Ingrédients</label>
         <div className="space-y-2">
           {ingredients.map((ing, i) => (
             <div key={i} className="flex gap-1.5 items-start">
@@ -147,7 +148,7 @@ export function RecetteForm({ initial, onSubmit, onCancel, isLoading }: RecetteF
                 type="text"
                 value={ing.name}
                 onChange={(e) => updateIngredient(i, 'name', e.target.value.toLowerCase())}
-                placeholder="ingredient"
+                placeholder="ingrédient"
                 className="flex-1 min-w-0 border border-border rounded-xl bg-card px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
               <input
@@ -155,7 +156,7 @@ export function RecetteForm({ initial, onSubmit, onCancel, isLoading }: RecetteF
                 value={ing.quantity || ''}
                 min={0}
                 onChange={(e) => updateIngredient(i, 'quantity', Number(e.target.value))}
-                placeholder="qte"
+                placeholder="qté"
                 className="w-16 border border-border rounded-xl bg-card px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-ring"
               />
               <div className="relative">
@@ -186,12 +187,12 @@ export function RecetteForm({ initial, onSubmit, onCancel, isLoading }: RecetteF
           onClick={addIngredient}
           className="flex items-center gap-1.5 text-sm text-primary font-medium"
         >
-          <Plus size={16} /> Ajouter un ingredient
+          <Plus size={16} /> Ajouter un ingrédient
         </button>
       </section>
 
       <section className="space-y-3">
-        <label className="block text-sm font-semibold text-foreground">Etapes</label>
+        <label className="block text-sm font-semibold text-foreground">Étapes</label>
         <div className="space-y-2">
           {steps.map((step, i) => (
             <div key={i} className="flex gap-2 items-start">
@@ -201,7 +202,7 @@ export function RecetteForm({ initial, onSubmit, onCancel, isLoading }: RecetteF
               <textarea
                 value={step}
                 onChange={(e) => updateStep(i, e.target.value)}
-                placeholder={"Etape " + (i + 1) + "..."}
+                placeholder={`Étape ${i + 1}...`}
                 rows={2}
                 className="flex-1 border border-border rounded-xl bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
               />
@@ -221,7 +222,7 @@ export function RecetteForm({ initial, onSubmit, onCancel, isLoading }: RecetteF
           onClick={addStep}
           className="flex items-center gap-1.5 text-sm text-primary font-medium"
         >
-          <Plus size={16} /> Ajouter une etape
+          <Plus size={16} /> Ajouter une étape
         </button>
       </section>
 
@@ -249,7 +250,7 @@ export function RecetteForm({ initial, onSubmit, onCancel, isLoading }: RecetteF
           ))}
         </div>
         <div className="space-y-1">
-          <span className="text-xs text-muted-foreground">Fiabilite de estimation</span>
+          <span className="text-xs text-muted-foreground">Fiabilité de l'estimation</span>
           <div className="flex gap-2">
             {(['low', 'medium', 'high'] as const).map((c) => (
               <button
@@ -263,7 +264,7 @@ export function RecetteForm({ initial, onSubmit, onCancel, isLoading }: RecetteF
                     : 'bg-card text-muted-foreground border-border'
                 )}
               >
-                {c === 'low' ? 'Approx.' : c === 'medium' ? 'Correcte' : 'Fiable'}
+                {c === 'low' ? '⚠️ Approx.' : c === 'medium' ? '〜 Correcte' : '✓ Fiable'}
               </button>
             ))}
           </div>

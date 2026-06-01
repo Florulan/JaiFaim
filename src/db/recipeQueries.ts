@@ -1,4 +1,4 @@
-﻿import { db } from './database'
+import { db } from './database'
 import type { Recipe } from '../types'
 
 export async function getAllRecipes(): Promise<Recipe[]> {
@@ -12,10 +12,13 @@ export async function getRecipeById(id: string): Promise<Recipe | undefined> {
 export async function searchRecipes(query: string): Promise<Recipe[]> {
   const q = query.toLowerCase().trim()
   if (!q) return getAllRecipes()
+
   const all = await db.recipes.toArray()
   return all.filter((r) => {
     const inName = r.name.toLowerCase().includes(q)
-    const inIngredients = r.ingredients.some((i) => i.name.toLowerCase().includes(q))
+    const inIngredients = r.ingredients.some((i) =>
+      i.name.toLowerCase().includes(q)
+    )
     return inName || inIngredients
   })
 }
