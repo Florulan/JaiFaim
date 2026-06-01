@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Plus, X } from 'lucide-react'
 import type { MealSlot, Recipe } from '../types'
 import { formatDayLabel, today } from '../lib/dates'
 import { RecettePicker } from './RecettePicker'
+
 
 interface WeekGridProps {
   dates: string[]
@@ -46,6 +48,7 @@ export function WeekGrid({ dates, slots, recipes, onSetSlot, onRemoveSlot }: Wee
         {dates.map((date) => {
           const { day, num } = formatDayLabel(date)
           const isToday = date === todayStr
+          const navigate = useNavigate()
           const lunchSlot = getSlot(date, 'lunch')
           const dinnerSlot = getSlot(date, 'dinner')
           const lunchRecipe = getRecipe(lunchSlot?.recipe_id ?? null)
@@ -81,10 +84,13 @@ export function WeekGrid({ dates, slots, recipes, onSetSlot, onRemoveSlot }: Wee
                       {recipe ? (
                         <div className="bg-secondary rounded-xl p-2 flex items-center gap-2">
                           <span className="text-lg flex-shrink-0">{recipe.emoji}</span>
-                          <div className="flex-1 min-w-0">
+                          <button
+                            onClick={() => navigate('/recette/' + recipe.id)}
+                            className="flex-1 min-w-0 text-left"
+                          >
                             <p className="text-xs font-medium text-foreground truncate">{recipe.name}</p>
                             <p className="text-[10px] text-muted-foreground">{recipe.macros.kcal} kcal</p>
-                          </div>
+                          </button>
                           <button
                             onClick={() => onRemoveSlot(date, mealType)}
                             className="p-1 text-muted-foreground hover:text-destructive flex-shrink-0"
