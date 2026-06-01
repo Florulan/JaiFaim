@@ -62,9 +62,10 @@ export function RecetteForm({ initial, onSubmit, onCancel, isLoading }: RecetteF
   const removeIngredient = (i: number) => setIngredients((p) => p.filter((_, idx) => idx !== i))
 
   const updateStep = (i: number, value: string) =>
-    setSteps((p) => p.map((s, idx) => idx === i ? value : s))
+    setSteps((p) => p.map((s, idx) => (idx === i ? value : s)))
   const addStep = () => setSteps((p) => [...p, ''])
-  const removeStep = (i: number) => setSteps((p) => p.filter((_, idx) => idx !== i))
+  const removeStep = (i: number) =>
+    setSteps((p) => p.filter((_, idx) => idx !== i))
 
   const toggleTag = (tag: RecipeTag) =>
     setTags((p) => p.includes(tag) ? p.filter((t) => t !== tag) : [...p, tag])
