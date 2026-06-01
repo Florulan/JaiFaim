@@ -1,45 +1,34 @@
-import { useState } from 'react'
-import { Plus, Trash2, ChevronDown, Camera, X } from 'lucide-react'
-import type { Recipe, Ingredient, RecipeTag, Unit } from '../types'
-import { RECIPE_TAGS, RECIPE_TAG_LABELS, UNIT_LABELS } from '../types'
-import { cn } from '../lib/utils'
-
+﻿import { useState } from "react"
+import { Plus, Trash2, ChevronDown, Camera, X } from "lucide-react"
+import type { Recipe, Ingredient, RecipeTag, Unit } from "../types"
+import { RECIPE_TAGS, RECIPE_TAG_LABELS, UNIT_LABELS } from "../types"
+import { cn } from "../lib/utils"
 
 interface RecetteFormProps {
   initial?: Partial<Recipe>
-  onSubmit: (recipe: Omit<Recipe, 'id' | 'created_at' | 'updated_at'>) => void
+  onSubmit: (recipe: Omit<Recipe, "id" | "created_at" | "updated_at">) => void
   onCancel: () => void
   isLoading?: boolean
 }
 
-const EMPTY_INGREDIENT: Ingredient = {
-  name: '',
-  quantity: 0,
-  unit: 'g',
-  note: null,
-}
-
-const UNITS: Unit[] = ['g', 'kg', 'ml', 'cl', 'l', 'cas', 'cac', 'piece', 'tranche', 'filet', 'botte', 'pincee']
+const EMPTY_INGREDIENT: Ingredient = { name: "", quantity: 0, unit: "g", note: null }
+const UNITS: Unit[] = ["g", "kg", "ml", "cl", "l", "cas", "cac", "piece", "tranche", "filet", "botte", "pincee"]
 
 export function RecetteForm({ initial, onSubmit, onCancel, isLoading }: RecetteFormProps) {
-  const [name, setName] = useState(initial?.name ?? '')
-  const [emoji, setEmoji] = useState(initial?.emoji ?? '🍽️')
+  const [name, setName] = useState(initial?.name ?? "")
+  const [emoji, setEmoji] = useState(initial?.emoji ?? "")
   const [prepTime, setPrepTime] = useState(initial?.prep_time ?? 10)
   const [cookTime, setCookTime] = useState(initial?.cook_time ?? 20)
   const [servings, setServings] = useState(initial?.servings ?? 2)
   const [tags, setTags] = useState<RecipeTag[]>(initial?.tags ?? [])
-  const [ingredients, setIngredients] = useState<Ingredient[]>(
-    initial?.ingredients ?? [{ ...EMPTY_INGREDIENT }]
-  )
-  const [steps, setSteps] = useState<string[]>(initial?.steps ?? [''])
+  const [ingredients, setIngredients] = useState<Ingredient[]>(initial?.ingredients ?? [{ ...EMPTY_INGREDIENT }])
+  const [steps, setSteps] = useState<string[]>(initial?.steps ?? [""])
   const [kcal, setKcal] = useState(initial?.macros?.kcal ?? 0)
   const [prot, setProt] = useState(initial?.macros?.p ?? 0)
   const [gluc, setGluc] = useState(initial?.macros?.g ?? 0)
   const [lip, setLip] = useState(initial?.macros?.l ?? 0)
-  const [confidence, setConfidence] = useState<'low' | 'medium' | 'high'>(
-    initial?.macros?.confidence ?? 'medium'
-  )
-  const [notes, setNotes] = useState(initial?.notes ?? '')
+  const [confidence, setConfidence] = useState<"low" | "medium" | "high">(initial?.macros?.confidence ?? "medium")
+  const [notes, setNotes] = useState(initial?.notes ?? "")
   const [photoPreview, setPhotoPreview] = useState<string | null>(initial?.photo_url ?? null)
   const [photoUrl, setPhotoUrl] = useState<string | null>(initial?.photo_url ?? null)
 
@@ -55,25 +44,21 @@ export function RecetteForm({ initial, onSubmit, onCancel, isLoading }: RecetteF
     reader.readAsDataURL(file)
   }
 
-  const updateIngredient = (i: number, field: keyof Ingredient, value: string | number | null) => {
+  const updateIngredient = (i: number, field: keyof Ingredient, value: string | number | null) =>
     setIngredients((prev) => prev.map((ing, idx) => idx === i ? { ...ing, [field]: value } : ing))
-  }
   const addIngredient = () => setIngredients((p) => [...p, { ...EMPTY_INGREDIENT }])
   const removeIngredient = (i: number) => setIngredients((p) => p.filter((_, idx) => idx !== i))
 
   const updateStep = (i: number, value: string) =>
-    setSteps((p) => p.map((s, idx) => (idx === i ? value : s)))
-  const addStep = () => setSteps((p) => [...p, ''])
-  const removeStep = (i: number) =>
-    setSteps((p) => p.filter((_, idx) => idx !== i))
+    setSteps((p) => p.map((s, idx) => idx === i ? value : s))
+  const addStep = () => setSteps((p) => [...p, ""])
+  const removeStep = (i: number) => setSteps((p) => p.filter((_, idx) => idx !== i))
 
   const toggleTag = (tag: RecipeTag) =>
     setTags((p) => p.includes(tag) ? p.filter((t) => t !== tag) : [...p, tag])
 
   const handleSubmit = () => {
     if (!name.trim()) return
-    const cleanIngredients = ingredients.filter((i) => i.name.trim())
-    const cleanSteps = steps.filter((s) => s.trim())
     onSubmit({
       name: name.trim(),
       emoji,
@@ -82,8 +67,8 @@ export function RecetteForm({ initial, onSubmit, onCancel, isLoading }: RecetteF
       cook_time: cookTime,
       servings,
       tags,
-      ingredients: cleanIngredients,
-      steps: cleanSteps,
+      ingredients: ingredients.filter((i) => i.name.trim()),
+      steps: steps.filter((s) => s.trim()),
       macros: { kcal, p: prot, g: gluc, l: lip, confidence },
       notes: notes.trim() || null,
     })
@@ -94,21 +79,25 @@ export function RecetteForm({ initial, onSubmit, onCancel, isLoading }: RecetteF
 
       <section className="space-y-3">
         <label className="block text-sm font-semibold text-foreground">Recette</label>
+        <div className="relative h-40 bg-secondary rounded-2xl overflow-hidden flex items-center justify-center">
+          {photoPreview ? (
+            <>
+              <img src={photoPreview} alt="preview" className="w-full h-full object-cover" />
+              <button type="button" onClick={() => { setPhotoPreview(null); setPhotoUrl(null) }} className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1">
+                <X size={14} />
+              </button>
+            </>
+          ) : (
+            <label className="flex flex-col items-center gap-2 cursor-pointer text-muted-foreground hover:text-foreground transition-colors">
+              <Camera size={28} />
+              <span className="text-xs font-medium">Ajouter une photo</span>
+              <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+            </label>
+          )}
+        </div>
         <div className="flex gap-2">
-          <input
-            type="text"
-            value={emoji}
-            onChange={(e) => setEmoji(e.target.value)}
-            className="w-14 text-2xl text-center border border-border rounded-xl bg-card p-2"
-            maxLength={2}
-          />
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Nom de la recette"
-            className="flex-1 border border-border rounded-xl bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          />
+          <input type="text" value={emoji} onChange={(e) => setEmoji(e.target.value)} className="w-14 text-2xl text-center border border-border rounded-xl bg-card p-2" maxLength={2} />
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nom de la recette" className="flex-1 border border-border rounded-xl bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
         </div>
       </section>
 
@@ -116,19 +105,13 @@ export function RecetteForm({ initial, onSubmit, onCancel, isLoading }: RecetteF
         <label className="block text-sm font-semibold text-foreground">Infos pratiques</label>
         <div className="grid grid-cols-3 gap-2">
           {[
-            { label: 'Prep (min)', value: prepTime, set: setPrepTime },
-            { label: 'Cuisson (min)', value: cookTime, set: setCookTime },
-            { label: 'Portions', value: servings, set: setServings },
+            { label: "Prep (min)", value: prepTime, set: setPrepTime },
+            { label: "Cuisson (min)", value: cookTime, set: setCookTime },
+            { label: "Portions", value: servings, set: setServings },
           ].map(({ label, value, set }) => (
             <div key={label} className="space-y-1">
               <span className="text-xs text-muted-foreground">{label}</span>
-              <input
-                type="number"
-                value={value}
-                min={0}
-                onChange={(e) => set(Number(e.target.value))}
-                className="w-full border border-border rounded-xl bg-card px-3 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-ring"
-              />
+              <input type="number" value={value} min={0} onChange={(e) => set(Number(e.target.value))} className="w-full border border-border rounded-xl bg-card px-3 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-ring" />
             </div>
           ))}
         </div>
@@ -138,17 +121,7 @@ export function RecetteForm({ initial, onSubmit, onCancel, isLoading }: RecetteF
         <label className="block text-sm font-semibold text-foreground">Tags</label>
         <div className="flex flex-wrap gap-2">
           {RECIPE_TAGS.map((tag) => (
-            <button
-              key={tag}
-              type="button"
-              onClick={() => toggleTag(tag)}
-              className={cn(
-                'text-xs px-3 py-1.5 rounded-full border transition-colors',
-                tags.includes(tag)
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-card text-muted-foreground border-border'
-              )}
-            >
+            <button key={tag} type="button" onClick={() => toggleTag(tag)} className={cn("text-xs px-3 py-1.5 rounded-full border transition-colors", tags.includes(tag) ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border")}>
               {RECIPE_TAG_LABELS[tag]}
             </button>
           ))}
@@ -156,144 +129,68 @@ export function RecetteForm({ initial, onSubmit, onCancel, isLoading }: RecetteF
       </section>
 
       <section className="space-y-3">
-        <label className="block text-sm font-semibold text-foreground">Ingrédients</label>
+        <label className="block text-sm font-semibold text-foreground">Ingredients</label>
         <div className="space-y-2">
           {ingredients.map((ing, i) => (
             <div key={i} className="flex gap-1.5 items-start">
-              <input
-                type="text"
-                value={ing.name}
-                onChange={(e) => updateIngredient(i, 'name', e.target.value.toLowerCase())}
-                placeholder="ingrédient"
-                className="flex-1 min-w-0 border border-border rounded-xl bg-card px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-              <input
-                type="number"
-                value={ing.quantity || ''}
-                min={0}
-                onChange={(e) => updateIngredient(i, 'quantity', Number(e.target.value))}
-                placeholder="qté"
-                className="w-16 border border-border rounded-xl bg-card px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-ring"
-              />
+              <input type="text" value={ing.name} onChange={(e) => updateIngredient(i, "name", e.target.value.toLowerCase())} placeholder="ingredient" className="flex-1 min-w-0 border border-border rounded-xl bg-card px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              <input type="number" value={ing.quantity || ""} min={0} onChange={(e) => updateIngredient(i, "quantity", Number(e.target.value))} placeholder="qte" className="w-16 border border-border rounded-xl bg-card px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-ring" />
               <div className="relative">
-                <select
-                  value={ing.unit}
-                  onChange={(e) => updateIngredient(i, 'unit', e.target.value as Unit)}
-                  className="appearance-none border border-border rounded-xl bg-card pl-2 pr-6 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                >
-                  {UNITS.map((u) => (
-                    <option key={u} value={u}>{UNIT_LABELS[u]}</option>
-                  ))}
+                <select value={ing.unit} onChange={(e) => updateIngredient(i, "unit", e.target.value as Unit)} className="appearance-none border border-border rounded-xl bg-card pl-2 pr-6 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                  {UNITS.map((u) => (<option key={u} value={u}>{UNIT_LABELS[u]}</option>))}
                 </select>
                 <ChevronDown size={12} className="absolute right-1.5 top-3 text-muted-foreground pointer-events-none" />
               </div>
-              <button
-                type="button"
-                onClick={() => removeIngredient(i)}
-                disabled={ingredients.length === 1}
-                className="p-2 text-muted-foreground hover:text-destructive disabled:opacity-30"
-              >
+              <button type="button" onClick={() => removeIngredient(i)} disabled={ingredients.length === 1} className="p-2 text-muted-foreground hover:text-destructive disabled:opacity-30">
                 <Trash2 size={16} />
               </button>
             </div>
           ))}
         </div>
-        <button
-          type="button"
-          onClick={addIngredient}
-          className="flex items-center gap-1.5 text-sm text-primary font-medium"
-        >
-          <Plus size={16} /> Ajouter un ingrédient
+        <button type="button" onClick={addIngredient} className="flex items-center gap-1.5 text-sm text-primary font-medium">
+          <Plus size={16} /> Ajouter un ingredient
         </button>
       </section>
 
       <section className="space-y-3">
-        <label className="block text-sm font-semibold text-foreground">Recette</label>
-        
-        {/* Photo */}
-        <div className="relative h-40 bg-secondary rounded-2xl overflow-hidden flex items-center justify-center">
-          {photoPreview ? (
-            <>
-              <img src={photoPreview} alt="preview" className="w-full h-full object-cover" />
-              <button
-                type="button"
-                onClick={() => { setPhotoPreview(null); setPhotoUrl(null) }}
-                className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1"
-              >
-                <X size={14} />
+        <label className="block text-sm font-semibold text-foreground">Etapes</label>
+        <div className="space-y-2">
+          {steps.map((step, i) => (
+            <div key={i} className="flex gap-2 items-start">
+              <span className="mt-2.5 w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center flex-shrink-0 font-semibold">{i + 1}</span>
+              <textarea value={step} onChange={(e) => updateStep(i, e.target.value)} placeholder={"Etape " + (i + 1) + "..."} rows={2} className="flex-1 border border-border rounded-xl bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
+              <button type="button" onClick={() => removeStep(i)} disabled={steps.length === 1} className="mt-2 p-1.5 text-muted-foreground hover:text-destructive disabled:opacity-30">
+                <Trash2 size={16} />
               </button>
-            </>
-          ) : (
-            <label className="flex flex-col items-center gap-2 cursor-pointer text-muted-foreground hover:text-foreground transition-colors">
-              <Camera size={28} />
-              <span className="text-xs font-medium">Ajouter une photo</span>
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handlePhotoChange}
-              />
-            </label>
-          )}
+            </div>
+          ))}
         </div>
-
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={emoji}
-            onChange={(e) => setEmoji(e.target.value)}
-            className="w-14 text-2xl text-center border border-border rounded-xl bg-card p-2"
-            maxLength={2}
-          />
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Nom de la recette"
-            className="flex-1 border border-border rounded-xl bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          />
-        </div>
+        <button type="button" onClick={addStep} className="flex items-center gap-1.5 text-sm text-primary font-medium">
+          <Plus size={16} /> Ajouter une etape
+        </button>
       </section>
 
       <section className="space-y-3">
-        <label className="block text-sm font-semibold text-foreground">
-          Macros <span className="text-muted-foreground font-normal">(par portion)</span>
-        </label>
+        <label className="block text-sm font-semibold text-foreground">Macros <span className="text-muted-foreground font-normal">(par portion)</span></label>
         <div className="grid grid-cols-4 gap-2">
           {[
-            { label: 'Kcal', value: kcal, set: setKcal },
-            { label: 'Prot g', value: prot, set: setProt },
-            { label: 'Gluc g', value: gluc, set: setGluc },
-            { label: 'Lip g', value: lip, set: setLip },
+            { label: "Kcal", value: kcal, set: setKcal },
+            { label: "Prot g", value: prot, set: setProt },
+            { label: "Gluc g", value: gluc, set: setGluc },
+            { label: "Lip g", value: lip, set: setLip },
           ].map(({ label, value, set }) => (
             <div key={label} className="space-y-1">
               <span className="text-xs text-muted-foreground">{label}</span>
-              <input
-                type="number"
-                value={value || ''}
-                min={0}
-                onChange={(e) => set(Number(e.target.value))}
-                className="w-full border border-border rounded-xl bg-card px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-ring"
-              />
+              <input type="number" value={value || ""} min={0} onChange={(e) => set(Number(e.target.value))} className="w-full border border-border rounded-xl bg-card px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-ring" />
             </div>
           ))}
         </div>
         <div className="space-y-1">
-          <span className="text-xs text-muted-foreground">Fiabilité de l'estimation</span>
+          <span className="text-xs text-muted-foreground">Fiabilite de estimation</span>
           <div className="flex gap-2">
-            {(['low', 'medium', 'high'] as const).map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setConfidence(c)}
-                className={cn(
-                  'flex-1 text-xs py-1.5 rounded-xl border transition-colors',
-                  confidence === c
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-card text-muted-foreground border-border'
-                )}
-              >
-                {c === 'low' ? '⚠️ Approx.' : c === 'medium' ? '〜 Correcte' : '✓ Fiable'}
+            {(["low", "medium", "high"] as const).map((c) => (
+              <button key={c} type="button" onClick={() => setConfidence(c)} className={cn("flex-1 text-xs py-1.5 rounded-xl border transition-colors", confidence === c ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border")}>
+                {c === "low" ? "Approx." : c === "medium" ? "Correcte" : "Fiable"}
               </button>
             ))}
           </div>
@@ -301,33 +198,14 @@ export function RecetteForm({ initial, onSubmit, onCancel, isLoading }: RecetteF
       </section>
 
       <section className="space-y-2">
-        <label className="block text-sm font-semibold text-foreground">
-          Notes <span className="font-normal text-muted-foreground">(optionnel)</span>
-        </label>
-        <textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="Conseils, variantes, accompagnements..."
-          rows={3}
-          className="w-full border border-border rounded-xl bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-        />
+        <label className="block text-sm font-semibold text-foreground">Notes <span className="font-normal text-muted-foreground">(optionnel)</span></label>
+        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Conseils, variantes, accompagnements..." rows={3} className="w-full border border-border rounded-xl bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
       </section>
 
       <div className="flex gap-3 pt-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="flex-1 py-3 rounded-2xl border border-border text-foreground font-medium text-sm"
-        >
-          Annuler
-        </button>
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={!name.trim() || isLoading}
-          className="flex-1 py-3 rounded-2xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-50"
-        >
-          {isLoading ? 'Enregistrement...' : 'Enregistrer'}
+        <button type="button" onClick={onCancel} className="flex-1 py-3 rounded-2xl border border-border text-foreground font-medium text-sm">Annuler</button>
+        <button type="button" onClick={handleSubmit} disabled={!name.trim() || isLoading} className="flex-1 py-3 rounded-2xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-50">
+          {isLoading ? "Enregistrement..." : "Enregistrer"}
         </button>
       </div>
     </div>
