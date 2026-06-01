@@ -93,7 +93,7 @@ export function PlanningWizard({ weekStart, dates, onClose, onValidate }: Planni
   // ─── Etape 1 : Selection des slots ───────────────────────────
   if (step === 1) {
     return (
-      <div className="fixed inset-0 bg-background z-50 flex flex-col">
+      <div className="fixed inset-0 bg-background z-[60] flex flex-col">
         <div className="shrink-0 bg-background border-b border-border px-4 py-4 flex items-center gap-3">
           <button onClick={onClose} className="p-2 -ml-2 text-muted-foreground"><X size={20} /></button>
           <div className="flex-1">
@@ -159,7 +159,7 @@ export function PlanningWizard({ weekStart, dates, onClose, onValidate }: Planni
   // ─── Etape 2 : Recettes imposees ─────────────────────────────
   if (step === 2) {
     return (
-      <div className="fixed inset-0 bg-background z-50 flex flex-col">
+      <div className="fixed inset-0 bg-background z-[60] flex flex-col">
         <div className="sticky top-0 bg-background border-b border-border px-4 py-4 flex items-center gap-3">
           <button onClick={() => setStep(1)} className="p-2 -ml-2 text-muted-foreground"><ChevronLeft size={20} /></button>
           <div className="flex-1">
@@ -272,7 +272,7 @@ export function PlanningWizard({ weekStart, dates, onClose, onValidate }: Planni
 
   // ─── Etape 3 : Validation ─────────────────────────────────────
   return (
-    <div className="fixed inset-0 bg-background z-50 flex flex-col">
+    <div className="fixed inset-0 bg-background z-[60] flex flex-col">
       <div className="sticky top-0 bg-background border-b border-border px-4 py-4 flex items-center gap-3">
         <button onClick={() => setStep(2)} className="p-2 -ml-2 text-muted-foreground"><ChevronLeft size={20} /></button>
         <div className="flex-1">
