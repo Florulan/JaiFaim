@@ -1,10 +1,11 @@
 ﻿import Dexie, { type Table } from 'dexie'
-import type { Recipe, MealSlot, UserProfile } from '../types'
+import type { Recipe, MealSlot, UserProfile, LeftoverItem } from '../types'
 
 class EpicurienDatabase extends Dexie {
   recipes!: Table<Recipe, string>
   meal_slots!: Table<MealSlot, string>
   user_profile!: Table<UserProfile, string>
+  leftovers!: Table<LeftoverItem, string>
 
   constructor() {
     super('epicurien-db')
@@ -12,6 +13,12 @@ class EpicurienDatabase extends Dexie {
       recipes: 'id, name, created_at, updated_at, *tags',
       meal_slots: 'id, [date+meal_type], date, recipe_id, is_suggestion',
       user_profile: 'id',
+    })
+    this.version(2).stores({
+      recipes: 'id, name, created_at, updated_at, *tags',
+      meal_slots: 'id, [date+meal_type], date, recipe_id, is_suggestion',
+      user_profile: 'id',
+      leftovers: 'id, recipe_id, frozen, cooked_at',
     })
   }
 }

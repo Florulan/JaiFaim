@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Clock, Users, Pencil, Trash2, X } from 'lucide-react'
 import { getRecipeById } from '../db/recipeQueries'
-import { useRecipeStore } from '../store/recipeStore'
+import { CuisineDrawer } from '../components/CuisineDrawer'
+import { useRecipeStore } from '../store/recipeStore' 
 import { RecetteForm } from '../components/RecetteForm'
 import { RECIPE_TAG_LABELS, UNIT_LABELS, MACRO_CONFIDENCE_LABELS } from '../types'
 import type { Recipe } from '../types'
@@ -16,6 +17,7 @@ export default function RecetteDetailPage() {
   const [recipe, setRecipe] = useState<Recipe | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [showCuisine, setShowCuisine] = useState(false)
 
   useEffect(() => {
     if (id) getRecipeById(id).then((r) => setRecipe(r ?? null))
@@ -65,11 +67,23 @@ export default function RecetteDetailPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      {showCuisine && (
+        <CuisineDrawer
+          recipe={recipe}
+          onClose={() => setShowCuisine(false)}
+        />
+      )}
       <div className="sticky top-0 bg-background border-b border-border z-10 px-4 py-3 flex items-center justify-between pt-safe">
         <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-muted-foreground">
           <ArrowLeft size={20} />
         </button>
         <div className="flex gap-2">
+          <button
+            onClick={() => setShowCuisine(true)}
+            className="flex items-center gap-1.5 text-xs font-semibold bg-accent text-accent-foreground px-3 py-1.5 rounded-xl"
+          >
+            👨‍🍳 J'ai cuisiné ça
+          </button>
           <button onClick={() => setIsEditing(true)} className="p-2 text-muted-foreground hover:text-foreground">
             <Pencil size={18} />
           </button>

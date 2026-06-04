@@ -116,3 +116,15 @@ export const DEFAULT_USER_PROFILE: UserProfile = {
   cuisine_prefs: [],
   updated_at: new Date().toISOString(),
 }
+
+// ─── Restes / Leftovers ──────────────────────────────────────
+export interface LeftoverItem {
+  id: string
+  recipe_id: string
+  portions: number              // nombre de portions restantes
+  cooked_at: string             // ISO 8601 — date de cuisson
+  expires_at: string | null     // null = pas de date limite
+  frozen: boolean               // true = au congélateur
+  notes: string | null
+  created_at: string
+}
