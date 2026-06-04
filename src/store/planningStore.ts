@@ -54,6 +54,7 @@ export const usePlanningStore = create<PlanningStore>((set, get) => ({
       recipe_id: recipeId,
       servings_override: null,
       is_suggestion: false,
+      is_leftover: false,
       validated_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
     }

@@ -1,12 +1,13 @@
 import { NavLink } from 'react-router-dom'
-import { BookOpen, CalendarDays, ShoppingCart, Settings } from 'lucide-react'
+import { BookOpen, CalendarDays, ShoppingCart, Snowflake, Settings } from 'lucide-react'
 import { cn } from '../lib/utils'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Recettes', icon: BookOpen },
   { to: '/planning', label: 'Planning', icon: CalendarDays },
   { to: '/courses', label: 'Courses', icon: ShoppingCart },
-  { to: '/parametres', label: 'Réglages', icon: Settings },
+  { to: '/congelateur', label: 'Stocks', icon: Snowflake },
+  { to: '/parametres', label: 'Reglages', icon: Settings },
 ] as const
 
 export function BottomNav() {
@@ -20,14 +21,12 @@ export function BottomNav() {
             end={to === '/'}
             className={({ isActive }) =>
               cn(
-                'flex flex-col items-center gap-0.5 px-4 py-2 rounded-lg transition-colors',
-                isActive
-                  ? 'text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
+                'flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg transition-colors',
+                isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
               )
             }
           >
-            <Icon size={22} strokeWidth={1.8} />
+            <Icon size={20} strokeWidth={1.8} />
             <span className="text-[10px] font-medium">{label}</span>
           </NavLink>
         ))}

@@ -75,6 +75,7 @@ export function WeekGrid({ dates, slots, recipes, onSetSlot, onRemoveSlot }: Wee
 
               <div className="grid grid-cols-2 gap-2">
                 {(['lunch', 'dinner'] as const).map((mealType) => {
+                  const slot = mealType === 'lunch' ? lunchSlot : dinnerSlot
                   const recipe = mealType === 'lunch' ? lunchRecipe : dinnerRecipe
                   const label = mealType === 'lunch' ? 'Dejeuner' : 'Diner'
 
@@ -82,14 +83,16 @@ export function WeekGrid({ dates, slots, recipes, onSetSlot, onRemoveSlot }: Wee
                     <div key={mealType}>
                       <p className="text-[10px] text-muted-foreground mb-1 font-medium">{label}</p>
                       {recipe ? (
-                        <div className="bg-secondary rounded-xl p-2 flex items-center gap-2">
-                          <span className="text-lg flex-shrink-0">{recipe.emoji}</span>
+                        <div className={"rounded-xl p-2 flex items-center gap-2 " + (slot?.is_leftover ? 'bg-accent/15 border border-accent/30' : 'bg-secondary')}>
+                          <span className="text-lg flex-shrink-0">{slot?.is_leftover ? '🥡' : recipe.emoji}</span>
                           <button
                             onClick={() => navigate('/recette/' + recipe.id)}
                             className="flex-1 min-w-0 text-left"
                           >
                             <p className="text-xs font-medium text-foreground truncate">{recipe.name}</p>
-                            <p className="text-[10px] text-muted-foreground">{recipe.macros.kcal} kcal</p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {slot?.is_leftover ? '🥡 Gamelle · ' : ''}{recipe.macros.kcal} kcal
+                            </p>
                           </button>
                           <button
                             onClick={() => onRemoveSlot(date, mealType)}

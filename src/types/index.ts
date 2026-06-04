@@ -52,14 +52,15 @@ export interface Recipe {
 // ─── Slot repas ───────────────────────────────────────────────
 // Contrainte : un seul slot par (date + meal_type) — enforcer côté app
 export interface MealSlot {
-  id: string                       // UUID v4
-  date: string                     // YYYY-MM-DD — pas de timezone
+  id: string
+  date: string
   meal_type: 'lunch' | 'dinner'
-  recipe_id: string | null         // null = slot vide
-  servings_override: number | null // null = utiliser Recipe.servings
-  is_suggestion: boolean           // true = proposé par l'IA, non validé
-  validated_at: string | null      // null si suggestion en attente
-  created_at: string               // ISO 8601
+  recipe_id: string | null
+  servings_override: number | null
+  is_suggestion: boolean
+  is_leftover: boolean
+  validated_at: string | null
+  created_at: string
 }
 
 // ─── Profil utilisateur ──────────────────────────────────────
