@@ -10,7 +10,7 @@ interface WeekGridProps {
   dates: string[]
   slots: MealSlot[]
   recipes: Recipe[]
-  onSetSlot: (date: string, mealType: 'lunch' | 'dinner', recipeId: string) => Promise<void>
+  onSetSlot: (date: string, mealType: 'lunch' | 'dinner', recipeId: string, isLeftover?: boolean, leftoverId?: string) => Promise<void>
   onRemoveSlot: (date: string, mealType: 'lunch' | 'dinner') => Promise<void>
 }
 
@@ -29,9 +29,9 @@ export function WeekGrid({ dates, slots, recipes, onSetSlot, onRemoveSlot }: Wee
   const getRecipe = (recipeId: string | null) =>
     recipeId ? recipes.find((r) => r.id === recipeId) : null
 
-  const handleSelect = async (recipeId: string) => {
+  const handleSelect = async (recipeId: string, isLeftover?: boolean, leftoverId?: string) => {
     if (!pickerTarget) return
-    await onSetSlot(pickerTarget.date, pickerTarget.mealType, recipeId)
+    await onSetSlot(pickerTarget.date, pickerTarget.mealType, recipeId, isLeftover ?? false, leftoverId)
     setPickerTarget(null)
   }
 
