@@ -7,6 +7,7 @@ import PlanningPage from './pages/PlanningPage'
 import CoursesPage from './pages/CoursesPage'
 import ParametresPage from './pages/ParametresPage'
 import RecetteDetailPage from './pages/RecetteDetailPage'
+import CongelateurPage from './pages/CongelateurPage'
 
 function App() {
   useEffect(() => {
@@ -22,6 +23,7 @@ function App() {
             <Route path="/recette/:id" element={<RecetteDetailPage />} />
             <Route path="/planning" element={<PlanningPage />} />
             <Route path="/courses" element={<CoursesPage />} />
+            <Route path="/congelateur" element={<CongelateurPage />} />
             <Route path="/parametres" element={<ParametresPage />} />
           </Routes>
         </main>
