@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { X, Snowflake, CalendarDays, Minus, Plus } from 'lucide-react'
 import type { Recipe, LeftoverItem, MealSlot } from '../types'
-import { createLeftover } from '../db/leftoverQueries'
-import { upsertSlot } from '../db/planningQueries'
+import { createLeftover } from '../services/leftoverService'
+import { upsertSlot } from '../services/planningDbService'
 import { getWeekDays, getMondayOfWeek, addWeeks, formatDayLabel } from '../lib/dates'
 
 interface CuisineDrawerProps {

@@ -1,23 +1,28 @@
 import { useState, useEffect } from 'react'
 import { Eye, EyeOff, Check, Trash2 } from 'lucide-react'
 import { getApiKey, saveApiKey, clearApiKey } from '../services/claudeService'
-import { db } from '../db/database'
-import type { UserProfile } from '../types'
-import { DEFAULT_USER_PROFILE } from '../types'
+import { supabase } from '../lib/supabase'
+import { useAuthStore } from '../store/authStore'
+import type { MacrosTarget } from '../types'
 
 export default function ParametresPage() {
+  const { profile, loadProfile } = useAuthStore()
+
   const [apiKey, setApiKey] = useState('')
   const [showKey, setShowKey] = useState(false)
   const [saved, setSaved] = useState(false)
   const [hasKey, setHasKey] = useState(false)
-  const [profile, setProfile] = useState<UserProfile>(DEFAULT_USER_PROFILE)
+  const [macrosTarget, setMacrosTarget] = useState<MacrosTarget>({ kcal: 2200, p: 160, g: 220, l: 75 })
   const [macrosSaved, setMacrosSaved] = useState(false)
 
   useEffect(() => {
     const key = getApiKey()
     if (key) { setHasKey(true); setApiKey(key) }
-    db.user_profile.get('local').then((p) => { if (p) setProfile(p) })
   }, [])
+
+  useEffect(() => {
+    if (profile) setMacrosTarget(profile.macros_target)
+  }, [profile])
 
   const handleSaveKey = () => {
     if (!apiKey.trim()) return
@@ -34,14 +39,25 @@ export default function ParametresPage() {
   }
 
   const handleSaveMacros = async () => {
-    const updated: UserProfile = { ...profile, updated_at: new Date().toISOString() }
-    await db.user_profile.put(updated)
+    if (!profile) return
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ macros_target: macrosTarget, updated_at: new Date().toISOString() })
+      .eq('id', profile.id)
+
+    if (error) {
+      console.error('Erreur sauvegarde macros:', error.message)
+      return
+    }
+
+    await loadProfile()
     setMacrosSaved(true)
     setTimeout(() => setMacrosSaved(false), 2000)
   }
 
   const updateMacro = (field: 'kcal' | 'p' | 'g' | 'l', value: number) => {
-    setProfile((prev) => ({ ...prev, macros_target: { ...prev.macros_target, [field]: value } }))
+    setMacrosTarget((prev) => ({ ...prev, [field]: value }))
   }
 
   return (
@@ -70,7 +86,7 @@ export default function ParametresPage() {
                 <span className="text-xs text-muted-foreground">{label}</span>
                 <input
                   type="number"
-                  value={profile.macros_target[field]}
+                  value={macrosTarget[field]}
                   min={0}
                   onChange={(e) => updateMacro(field, Number(e.target.value))}
                   className="w-full border border-border rounded-xl bg-card px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-ring"

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ShoppingCart, RefreshCw, Trash2 } from 'lucide-react'
-import { generateCourseList, type CourseItem } from '../db/coursesQueries'
+import { generateCourseList, type CourseItem } from '../services/coursesService'
 import { getWeekDays, getMondayOfWeek } from '../lib/dates'
 import { UNIT_LABELS } from '../types'
 import type { Unit } from '../types'

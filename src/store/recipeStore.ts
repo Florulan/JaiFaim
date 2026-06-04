@@ -5,7 +5,7 @@ import {
   updateRecipe as dbUpdateRecipe,
   deleteRecipe as dbDeleteRecipe,
   searchRecipes,
-} from '../db/recipeQueries'
+} from '../services/recipeService'
 
 interface RecipeStore {
   recipes: Recipe[]

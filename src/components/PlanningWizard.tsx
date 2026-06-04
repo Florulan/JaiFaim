@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { X, ChevronRight, ChevronLeft, Sparkles, RefreshCw } from 'lucide-react'
 import { generatePlanning, type SlotSelection, type GeneratedSlot } from '../services/planningService'
-import { getAllRecipes } from '../db/recipeQueries'
+import { getAllRecipes } from '../services/recipeService'
 import { formatDayLabel } from '../lib/dates'
 import type { Recipe } from '../types'
 

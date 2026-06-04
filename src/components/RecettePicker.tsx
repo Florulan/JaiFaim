@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Search, X, Snowflake } from 'lucide-react'
-import { getAllRecipes, searchRecipes } from '../db/recipeQueries'
-import { getAllLeftovers } from '../db/leftoverQueries'
+import { getAllRecipes, searchRecipes } from '../services/recipeService'
+import { getAllLeftovers } from '../services/leftoverService'
 import type { Recipe, LeftoverItem } from '../types'
 
 interface RecettePickerProps {
@@ -26,15 +26,16 @@ export function RecettePicker({ onSelect, onClose }: RecettePickerProps) {
   }, [])
 
   const loadLeftovers = async () => {
-    const all = await getAllLeftovers()
-    const withRecipes = await Promise.all(
-      all.map(async (l) => {
-        const { getRecipeById } = await import('../db/recipeQueries')
-        return { leftover: l, recipe: await getRecipeById(l.recipe_id) ?? null }
-      })
-    )
-    setLeftovers(withRecipes)
-  }
+  const all = await getAllLeftovers()
+  const { getRecipeById } = await import('../services/recipeService')
+  const withRecipes = await Promise.all(
+    all.map(async (l) => ({
+      leftover: l,
+      recipe: await getRecipeById(l.recipe_id) ?? null,
+    }))
+  )
+  setLeftovers(withRecipes)
+}
 
   useEffect(() => {
     if (tab === 'recettes') {
@@ -129,7 +130,10 @@ export function RecettePicker({ onSelect, onClose }: RecettePickerProps) {
               {leftovers.map(({ leftover, recipe }) => (
                 <button
                   key={leftover.id}
-                  onClick={() => onSelect(recipe?.id ?? '', true, leftover.id)}
+                  onClick={() => {
+                    if (!recipe) return
+                    onSelect(recipe.id, true, leftover.id)
+                  }}
                   className="w-full flex items-center gap-3 p-3 bg-card rounded-2xl border border-border active:scale-95 transition-transform text-left"
                 >
                   <span className="text-3xl">{leftover.frozen ? '❄️' : '🥡'}</span>

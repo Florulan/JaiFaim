@@ -4,7 +4,8 @@ import {
   getSlotsForWeek,
   upsertSlot,
   clearSlot,
-} from '../db/planningQueries'
+} from '../services/planningDbService'
+import { getAllLeftovers, consumeLeftoverPortion } from '../services/leftoverService'
 import { getWeekDays, getMondayOfWeek, addWeeks } from '../lib/dates'
 
 interface PlanningStore {
@@ -49,7 +50,6 @@ export const usePlanningStore = create<PlanningStore>((set, get) => ({
   setSlot: async (date, mealType, recipeId, isLeftover = false, leftoverId) => {
     let isFrozen = false
     if (isLeftover && leftoverId) {
-      const { getAllLeftovers } = await import('../db/leftoverQueries')
       const leftovers = await getAllLeftovers()
       const leftover = leftovers.find((l) => l.id === leftoverId)
       isFrozen = leftover?.frozen ?? false
@@ -67,11 +67,13 @@ export const usePlanningStore = create<PlanningStore>((set, get) => ({
       validated_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
     }
+
     await upsertSlot(slot)
+
     if (isLeftover && leftoverId) {
-      const { consumeLeftoverPortion } = await import('../db/leftoverQueries')
       await consumeLeftoverPortion(leftoverId)
     }
+
     await get().loadWeek(get().weekStart)
   },
 

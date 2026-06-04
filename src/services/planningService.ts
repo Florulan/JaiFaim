@@ -1,6 +1,6 @@
 import type { Recipe } from '../types'
-import { getAllRecipes } from '../db/recipeQueries'
-import { getSlotsForWeek } from '../db/planningQueries'
+import { getAllRecipes } from './recipeService'
+import { getSlotsForWeek } from './planningDbService'
 
 export interface SlotSelection {
   date: string

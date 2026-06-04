@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Snowflake, Trash2, Plus } from 'lucide-react'
-import { getAllLeftovers, deleteLeftover, updateLeftover } from '../db/leftoverQueries'
-import { getRecipeById } from '../db/recipeQueries'
+import { getAllLeftovers, deleteLeftover, updateLeftover } from '../services/leftoverService'
+import { getRecipeById } from '../services/recipeService'
 import type { LeftoverItem, Recipe } from '../types'
 
 interface LeftoverWithRecipe {

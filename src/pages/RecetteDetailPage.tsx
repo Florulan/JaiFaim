@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Clock, Users, Pencil, Trash2, X } from 'lucide-react'
-import { getRecipeById } from '../db/recipeQueries'
+import { getRecipeById } from '../services/recipeService'
 import { CuisineDrawer } from '../components/CuisineDrawer'
 import { useRecipeStore } from '../store/recipeStore' 
 import { RecetteForm } from '../components/RecetteForm'
