@@ -69,6 +69,7 @@ export function CuisineDrawer({ recipe, onClose }: CuisineDrawerProps) {
           servings_override: 1,
           is_suggestion: false,
           is_leftover: true,
+          is_frozen: false,
           validated_at: now,
           created_at: now,
         }

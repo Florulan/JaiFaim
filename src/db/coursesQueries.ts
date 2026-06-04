@@ -15,7 +15,7 @@ export async function generateCourseList(weekDates: string[]): Promise<CourseIte
     .anyOf(weekDates)
     .toArray()
 
-  const recipeIds = [...new Set(slots.map((s) => s.recipe_id).filter(Boolean) as string[])]
+  const recipeIds = [...new Set(slots.filter((s) => !s.is_leftover).map((s) => s.recipe_id).filter(Boolean) as string[])]
   if (recipeIds.length === 0) return []
 
   const recipes = await db.recipes.where('id').anyOf(recipeIds).toArray()

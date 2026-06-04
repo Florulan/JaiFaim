@@ -59,6 +59,7 @@ export interface MealSlot {
   servings_override: number | null
   is_suggestion: boolean
   is_leftover: boolean
+  is_frozen: boolean
   validated_at: string | null
   created_at: string
 }

@@ -15,7 +15,7 @@ interface PlanningStore {
   nextWeek: () => Promise<void>
   prevWeek: () => Promise<void>
   goToToday: () => Promise<void>
-  setSlot: (date: string, mealType: 'lunch' | 'dinner', recipeId: string) => Promise<void>
+  setSlot: (date: string, mealType: 'lunch' | 'dinner', recipeId: string, isLeftover?: boolean, leftoverId?: string) => Promise<void>
   removeSlot: (date: string, mealType: 'lunch' | 'dinner') => Promise<void>
 }
 
@@ -46,7 +46,15 @@ export const usePlanningStore = create<PlanningStore>((set, get) => ({
     await get().loadWeek(monday)
   },
 
-  setSlot: async (date, mealType, recipeId) => {
+  setSlot: async (date, mealType, recipeId, isLeftover = false, leftoverId) => {
+    let isFrozen = false
+    if (isLeftover && leftoverId) {
+      const { getAllLeftovers } = await import('../db/leftoverQueries')
+      const leftovers = await getAllLeftovers()
+      const leftover = leftovers.find((l) => l.id === leftoverId)
+      isFrozen = leftover?.frozen ?? false
+    }
+
     const slot: MealSlot = {
       id: crypto.randomUUID(),
       date,
@@ -54,11 +62,16 @@ export const usePlanningStore = create<PlanningStore>((set, get) => ({
       recipe_id: recipeId,
       servings_override: null,
       is_suggestion: false,
-      is_leftover: false,
+      is_leftover: isLeftover,
+      is_frozen: isFrozen,
       validated_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
     }
     await upsertSlot(slot)
+    if (isLeftover && leftoverId) {
+      const { consumeLeftoverPortion } = await import('../db/leftoverQueries')
+      await consumeLeftoverPortion(leftoverId)
+    }
     await get().loadWeek(get().weekStart)
   },
 
