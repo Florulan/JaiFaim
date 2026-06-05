@@ -1,11 +1,7 @@
 import { supabase } from '../lib/supabase'
 import type { Recipe } from '../types'
 
-function getUserId(): string {
-  const session = supabase.auth.getSession()
-  // On récupère le user depuis le store auth directement via supabase
-  return '' // sera remplacé par le vrai user_id ci-dessous
-}
+
 
 async function getCurrentUserId(): Promise<string> {
   const { data: { user } } = await supabase.auth.getUser()
