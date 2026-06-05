@@ -11,6 +11,21 @@ import RecetteDetailPage from './pages/RecetteDetailPage'
 import CongelateurPage from './pages/CongelateurPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
+import ExplorerPage from './pages/ExplorerPage'
+import MonProfilPage from './pages/MonProfilPage'
+import ProfilPage from './pages/ProfilPage'
+
+const PROTECTED_ROUTES = [
+  { path: '/', element: <BibliothequeePage /> },
+  { path: '/recette/:id', element: <RecetteDetailPage /> },
+  { path: '/planning', element: <PlanningPage /> },
+  { path: '/courses', element: <CoursesPage /> },
+  { path: '/congelateur', element: <CongelateurPage /> },
+  { path: '/parametres', element: <ParametresPage /> },
+  { path: '/explorer', element: <ExplorerPage /> },
+  { path: '/mon-profil', element: <MonProfilPage /> },
+  { path: '/profil/:username', element: <ProfilPage /> },
+]
 
 function App() {
   const { initialize } = useAuthStore()
@@ -23,59 +38,20 @@ function App() {
     <HashRouter>
       <div className="min-h-screen bg-background">
         <Routes>
-          {/* Routes publiques */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-
-          {/* Routes protégées */}
-          <Route path="/" element={
-            <PrivateRoute>
-              <main className="pb-20">
-                <BibliothequeePage />
-              </main>
-              <BottomNav />
-            </PrivateRoute>
-          } />
-          <Route path="/recette/:id" element={
-            <PrivateRoute>
-              <main className="pb-20">
-                <RecetteDetailPage />
-              </main>
-              <BottomNav />
-            </PrivateRoute>
-          } />
-          <Route path="/planning" element={
-            <PrivateRoute>
-              <main className="pb-20">
-                <PlanningPage />
-              </main>
-              <BottomNav />
-            </PrivateRoute>
-          } />
-          <Route path="/courses" element={
-            <PrivateRoute>
-              <main className="pb-20">
-                <CoursesPage />
-              </main>
-              <BottomNav />
-            </PrivateRoute>
-          } />
-          <Route path="/congelateur" element={
-            <PrivateRoute>
-              <main className="pb-20">
-                <CongelateurPage />
-              </main>
-              <BottomNav />
-            </PrivateRoute>
-          } />
-          <Route path="/parametres" element={
-            <PrivateRoute>
-              <main className="pb-20">
-                <ParametresPage />
-              </main>
-              <BottomNav />
-            </PrivateRoute>
-          } />
+          {PROTECTED_ROUTES.map(({ path, element }) => (
+            <Route
+              key={path}
+              path={path}
+              element={
+                <PrivateRoute>
+                  <main className="pb-20">{element}</main>
+                  <BottomNav />
+                </PrivateRoute>
+              }
+            />
+          ))}
         </Routes>
       </div>
     </HashRouter>

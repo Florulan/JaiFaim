@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Clock, Users, Pencil, Trash2, X } from 'lucide-react'
+import { ArrowLeft, Clock, Users, Pencil, Trash2, X, Globe, Lock } from 'lucide-react'
 import { getRecipeById } from '../services/recipeService'
+import { toggleRecipePublic } from '../services/explorerService'
+import { supabase } from '../lib/supabase'
 import { CuisineDrawer } from '../components/CuisineDrawer'
-import { useRecipeStore } from '../store/recipeStore' 
+import { useRecipeStore } from '../store/recipeStore'
 import { RecetteForm } from '../components/RecetteForm'
 import { RECIPE_TAG_LABELS, UNIT_LABELS, MACRO_CONFIDENCE_LABELS } from '../types'
 import type { Recipe } from '../types'
@@ -18,20 +20,35 @@ export default function RecetteDetailPage() {
   const [isEditing, setIsEditing] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showCuisine, setShowCuisine] = useState(false)
+  const [isPublic, setIsPublic] = useState(false)
+  const [isTogglingPublic, setIsTogglingPublic] = useState(false)
 
   useEffect(() => {
-    if (id) getRecipeById(id).then((r) => setRecipe(r ?? null))
+    if (!id) return
+    getRecipeById(id).then((r) => {
+      setRecipe(r ?? null)
+      if (r) {
+        supabase
+          .from('recipes')
+          .select('is_public')
+          .eq('id', r.id)
+          .single()
+          .then(({ data }) => { if (data) setIsPublic(data.is_public) })
+      }
+    })
   }, [id])
 
-  if (!recipe) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
+  const handleTogglePublic = async () => {
+    if (!recipe) return
+    setIsTogglingPublic(true)
+    const newValue = !isPublic
+    const { error } = await toggleRecipePublic(recipe.id, newValue)
+    if (!error) setIsPublic(newValue)
+    setIsTogglingPublic(false)
   }
 
   const handleUpdate = async (data: RecipeFormData) => {
+    if (!recipe) return
     const updated: Recipe = { ...recipe, ...data, updated_at: new Date().toISOString() }
     await updateRecipe(updated)
     setRecipe(updated)
@@ -39,10 +56,19 @@ export default function RecetteDetailPage() {
   }
 
   const handleDelete = async () => {
+    if (!recipe) return
     if (!window.confirm(`Supprimer "${recipe.name}" ?`)) return
     setIsDeleting(true)
     await deleteRecipe(recipe.id)
     navigate('/')
+  }
+
+  if (!recipe) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
   }
 
   if (isEditing) {
@@ -68,11 +94,9 @@ export default function RecetteDetailPage() {
   return (
     <div className="min-h-screen bg-background">
       {showCuisine && (
-        <CuisineDrawer
-          recipe={recipe}
-          onClose={() => setShowCuisine(false)}
-        />
+        <CuisineDrawer recipe={recipe} onClose={() => setShowCuisine(false)} />
       )}
+
       <div className="sticky top-0 bg-background border-b border-border z-10 px-4 py-3 flex items-center justify-between pt-safe">
         <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-muted-foreground">
           <ArrowLeft size={20} />
@@ -83,6 +107,14 @@ export default function RecetteDetailPage() {
             className="flex items-center gap-1.5 text-xs font-semibold bg-accent text-accent-foreground px-3 py-1.5 rounded-xl"
           >
             👨‍🍳 J'ai cuisiné ça
+          </button>
+          <button
+            onClick={handleTogglePublic}
+            disabled={isTogglingPublic}
+            className="p-2 text-muted-foreground hover:text-foreground"
+            title={isPublic ? 'Rendre privée' : 'Rendre publique'}
+          >
+            {isPublic ? <Globe size={18} className="text-primary" /> : <Lock size={18} />}
           </button>
           <button onClick={() => setIsEditing(true)} className="p-2 text-muted-foreground hover:text-foreground">
             <Pencil size={18} />
@@ -95,11 +127,7 @@ export default function RecetteDetailPage() {
 
       <div className="h-48 bg-secondary flex items-center justify-center overflow-hidden">
         {recipe.photo_url ? (
-          <img
-            src={recipe.photo_url}
-            alt={recipe.name}
-            className="w-full h-full object-cover"
-          />
+          <img src={recipe.photo_url} alt={recipe.name} className="w-full h-full object-cover" />
         ) : (
           <span className="text-7xl">{recipe.emoji}</span>
         )}

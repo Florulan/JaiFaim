@@ -1,13 +1,13 @@
 import { NavLink } from 'react-router-dom'
-import { BookOpen, CalendarDays, ShoppingCart, Snowflake, Settings } from 'lucide-react'
+import { BookOpen, CalendarDays, ShoppingCart, Compass, User } from 'lucide-react'
 import { cn } from '../lib/utils'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Recettes', icon: BookOpen },
   { to: '/planning', label: 'Planning', icon: CalendarDays },
+  { to: '/explorer', label: 'Explorer', icon: Compass },
   { to: '/courses', label: 'Courses', icon: ShoppingCart },
-  { to: '/congelateur', label: 'Stocks', icon: Snowflake },
-  { to: '/parametres', label: 'Reglages', icon: Settings },
+  { to: '/mon-profil', label: 'Profil', icon: User },
 ] as const
 
 export function BottomNav() {
