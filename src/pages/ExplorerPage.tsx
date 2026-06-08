@@ -182,13 +182,7 @@ export default function ExplorerPage() {
 
             {/* Onglet Profils */}
             {tab === 'profils' && (
-              query.trim() === '' ? (
-                <div className="flex flex-col items-center justify-center py-20 text-center">
-                  <span className="text-4xl mb-3">👤</span>
-                  <p className="text-foreground font-medium">Recherche un profil</p>
-                  <p className="text-muted-foreground text-sm mt-1">Tape un nom d'utilisateur</p>
-                </div>
-              ) : profiles.length === 0 ? (
+              profiles.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-center">
                   <span className="text-4xl mb-3">🔍</span>
                   <p className="text-foreground font-medium">Aucun profil trouvé</p>
@@ -218,7 +212,6 @@ export default function ExplorerPage() {
                 </div>
               )
             )}
-
             {/* Onglet Amis */}
             {tab === 'amis' && (
               <div className="space-y-6">

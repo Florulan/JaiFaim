@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, UserPlus, UserCheck, UserX, Clock } from 'lucide-react'
 import { getProfileByUsername, getPublicRecipesByUser } from '../services/profileService'
+import { getFriendshipStatus, sendFriendRequest, acceptFriendRequest, removeFriend, type FriendshipStatus } from '../services/friendshipService'
 import type { Profile } from '../types/supabase'
 import type { Recipe } from '../types'
 
@@ -12,6 +13,8 @@ export default function ProfilPage() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [recipes, setRecipes] = useState<Recipe[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [friendshipStatus, setFriendshipStatus] = useState<FriendshipStatus>('none')
+  const [isUpdating, setIsUpdating] = useState(false)
 
   useEffect(() => {
     if (!username) return
@@ -19,13 +22,40 @@ export default function ProfilPage() {
       const p = await getProfileByUsername(username)
       setProfile(p)
       if (p) {
-        const r = await getPublicRecipesByUser(p.id)
+        const [r, fs] = await Promise.all([
+          getPublicRecipesByUser(p.id),
+          getFriendshipStatus(p.id),
+        ])
         setRecipes(r as Recipe[])
+        setFriendshipStatus(fs)
       }
       setIsLoading(false)
     }
     load()
   }, [username])
+
+  const handleFriendAction = async () => {
+    if (!profile) return
+    setIsUpdating(true)
+    if (friendshipStatus === 'none') {
+      await sendFriendRequest(profile.id)
+      setFriendshipStatus('pending_sent')
+    } else if (friendshipStatus === 'pending_received') {
+      await acceptFriendRequest(profile.id)
+      setFriendshipStatus('accepted')
+    } else if (friendshipStatus === 'accepted' || friendshipStatus === 'pending_sent') {
+      await removeFriend(profile.id)
+      setFriendshipStatus('none')
+    }
+    setIsUpdating(false)
+  }
+
+  const friendButtonConfig = {
+    none: { label: 'Suivre', icon: UserPlus, className: 'bg-primary text-primary-foreground' },
+    pending_sent: { label: 'Demande envoyée', icon: Clock, className: 'bg-secondary text-muted-foreground' },
+    pending_received: { label: 'Accepter', icon: UserCheck, className: 'bg-primary text-primary-foreground' },
+    accepted: { label: 'Ami ✓', icon: UserX, className: 'bg-secondary text-foreground' },
+  }
 
   if (isLoading) {
     return (
@@ -43,6 +73,9 @@ export default function ProfilPage() {
       </div>
     )
   }
+
+  const btn = friendButtonConfig[friendshipStatus]
+  const BtnIcon = btn.icon
 
   return (
     <div className="min-h-screen bg-background">
@@ -71,6 +104,14 @@ export default function ProfilPage() {
               <p className="text-sm text-muted-foreground mt-2 max-w-xs">{profile.bio}</p>
             )}
           </div>
+          <button
+            onClick={handleFriendAction}
+            disabled={isUpdating}
+            className={`flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 ${btn.className}`}
+          >
+            <BtnIcon size={15} />
+            {btn.label}
+          </button>
         </div>
 
         <div className="bg-card border border-border rounded-2xl p-4 text-center">
@@ -81,15 +122,14 @@ export default function ProfilPage() {
         <div>
           <h2 className="font-semibold text-foreground mb-3">Recettes</h2>
           {recipes.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">
-              Aucune recette publique
-            </p>
+            <p className="text-sm text-muted-foreground text-center py-8">Aucune recette publique</p>
           ) : (
             <div className="space-y-2">
               {recipes.map((recipe) => (
-                <div
+                <button
                   key={recipe.id}
-                  className="flex items-center gap-3 p-3 bg-card rounded-2xl border border-border"
+                  onClick={() => navigate(`/explorer/recette/${recipe.id}`)}
+                  className="w-full flex items-center gap-3 p-3 bg-card rounded-2xl border border-border active:scale-95 transition-transform text-left"
                 >
                   <span className="text-3xl">{recipe.emoji}</span>
                   <div className="flex-1 min-w-0">
@@ -98,7 +138,7 @@ export default function ProfilPage() {
                       {recipe.macros.kcal} kcal · {recipe.prep_time + recipe.cook_time} min
                     </p>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           )}
