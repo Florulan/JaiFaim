@@ -115,9 +115,12 @@ export default function ExplorerRecettePage() {
 
       <div className="px-4 py-5 space-y-6">
         <div>
-          <p className="text-xs text-muted-foreground mb-1">
-            par @{recipe.owner_username}
-          </p>
+          <button
+            onClick={() => navigate(`/profil/${recipe.owner_username}`)}
+            className="text-xs text-primary mb-1 hover:underline"
+          >
+            @{recipe.owner_username}
+          </button>
           <h1 className="text-2xl font-bold text-foreground">{recipe.name}</h1>
           <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
             <span className="flex items-center gap-1.5">

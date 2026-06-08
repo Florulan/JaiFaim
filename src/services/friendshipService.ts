@@ -4,18 +4,20 @@ import type { Profile } from '../types/supabase'
 export type FriendshipStatus = 'none' | 'pending_sent' | 'pending_received' | 'accepted'
 
 export async function searchProfiles(query: string): Promise<Profile[]> {
-  if (!query.trim()) return []
-
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data, error } = await supabase
+  let q = supabase
     .from('profiles')
     .select('*')
-    .ilike('username', `%${query.trim()}%`)
     .eq('is_public', true)
     .neq('id', user?.id ?? '')
     .limit(20)
 
+  if (query.trim()) {
+    q = q.ilike('username', `%${query.trim()}%`)
+  }
+
+  const { data, error } = await q
   if (error) return []
   return (data ?? []) as Profile[]
 }
