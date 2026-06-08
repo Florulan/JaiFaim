@@ -99,7 +99,7 @@ export default function ExplorerPage() {
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-foreground truncate">{recipe.name}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        par @{recipe.owner_username} · {recipe.macros.kcal} kcal · {recipe.prep_time + recipe.cook_time} min
+                        par <button onClick={(e) => { e.stopPropagation(); navigate(`/profil/${recipe.owner_username}`) }} className="text-primary hover:underline">@{recipe.owner_username}</button> · {recipe.macros.kcal} kcal · {recipe.prep_time + recipe.cook_time} min
                       </p>
                     </div>
                     {!isOwn && (
