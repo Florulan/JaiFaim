@@ -3,6 +3,7 @@ import { Plus, Trash2, ChevronDown, Camera, X } from 'lucide-react'
 import type { Recipe, Ingredient, RecipeTag, Unit } from '../types'
 import { RECIPE_TAGS, RECIPE_TAG_LABELS, UNIT_LABELS } from '../types'
 import { cn } from '../lib/utils'
+import { supabase } from '../lib/supabase'
 
 interface RecetteFormProps {
   initial?: Partial<Recipe>
@@ -31,18 +32,41 @@ export function RecetteForm({ initial, onSubmit, onCancel, isLoading }: RecetteF
   const [notes, setNotes] = useState(initial?.notes ?? '')
   const [photoPreview, setPhotoPreview] = useState<string | null>(initial?.photo_url ?? null)
   const [photoUrl, setPhotoUrl] = useState<string | null>(initial?.photo_url ?? null)
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      const result = reader.result as string
-      setPhotoPreview(result)
-      setPhotoUrl(result)
-    }
-    reader.readAsDataURL(file)
+ const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0]
+  if (!file) return
+
+  // Préview immédiate pendant l'upload
+  const objectUrl = URL.createObjectURL(file)
+  setPhotoPreview(objectUrl)
+  setIsUploadingPhoto(true)
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) { setIsUploadingPhoto(false); return }
+
+  const ext = file.name.split('.').pop()
+  const path = `${user.id}/${crypto.randomUUID()}.${ext}`
+
+  const { error } = await supabase.storage
+    .from('recipe-photos')
+    .upload(path, file, { upsert: false })
+
+  if (error) {
+    console.error('Erreur upload photo:', error.message)
+    setPhotoPreview(null)
+    setIsUploadingPhoto(false)
+    return
   }
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('recipe-photos')
+    .getPublicUrl(path)
+
+  setPhotoUrl(publicUrl)
+  setIsUploadingPhoto(false)
+}
 
   const updateIngredient = (i: number, field: keyof Ingredient, value: string | number | null) =>
     setIngredients((prev) => prev.map((ing, idx) => idx === i ? { ...ing, [field]: value } : ing))
@@ -298,13 +322,13 @@ export function RecetteForm({ initial, onSubmit, onCancel, isLoading }: RecetteF
           Annuler
         </button>
         <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={!name.trim() || isLoading}
-          className="flex-1 py-3 rounded-2xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-50"
-        >
-          {isLoading ? 'Enregistrement...' : 'Enregistrer'}
-        </button>
+        type="button"
+        onClick={handleSubmit}
+        disabled={!name.trim() || isLoading || isUploadingPhoto}
+        className="flex-1 py-3 rounded-2xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-50"
+      >
+        {isLoading || isUploadingPhoto ? 'Enregistrement...' : 'Enregistrer'}
+      </button>
       </div>
     </div>
   )

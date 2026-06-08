@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Search, Copy, Check } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { getPublicRecipes, copyRecipeToMyLibrary, type PublicRecipe } from '../services/explorerService'
 import { RECIPE_TAG_LABELS } from '../types'
 import type { RecipeTag } from '../types'
@@ -7,6 +8,7 @@ import { useAuthStore } from '../store/authStore'
 
 export default function ExplorerPage() {
   const { user } = useAuthStore()
+  const navigate = useNavigate()
   const [recipes, setRecipes] = useState<PublicRecipe[]>([])
   const [query, setQuery] = useState('')
   const [activeTag, setActiveTag] = useState<RecipeTag | null>(null)
@@ -22,7 +24,8 @@ export default function ExplorerPage() {
 
   useEffect(() => { load() }, [query, activeTag])
 
-  const handleCopy = async (recipe: PublicRecipe) => {
+  const handleCopy = async (e: React.MouseEvent, recipe: PublicRecipe) => {
+    e.stopPropagation()
     const { error } = await copyRecipeToMyLibrary(recipe.id)
     if (!error) {
       setCopied(recipe.id)
@@ -83,12 +86,13 @@ export default function ExplorerPage() {
         ) : (
           <div className="space-y-3">
             {recipes.map((recipe) => {
-              const isOwn = recipe.owner_username === user?.id
+              const isOwn = recipe.owner_username === user?.email?.split('@')[0]
               const isCopied = copied === recipe.id
               return (
                 <div
                   key={recipe.id}
-                  className="bg-card rounded-2xl border border-border p-4 space-y-3"
+                  onClick={() => navigate(`/explorer/recette/${recipe.id}`)}
+                  className="bg-card rounded-2xl border border-border p-4 space-y-3 cursor-pointer active:scale-95 transition-transform"
                 >
                   <div className="flex items-start gap-3">
                     <span className="text-3xl">{recipe.emoji}</span>
@@ -100,7 +104,7 @@ export default function ExplorerPage() {
                     </div>
                     {!isOwn && (
                       <button
-                        onClick={() => handleCopy(recipe)}
+                        onClick={(e) => handleCopy(e, recipe)}
                         disabled={isCopied}
                         className={`shrink-0 flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl transition-colors ${isCopied ? 'bg-primary/10 text-primary' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
                       >

@@ -14,6 +14,7 @@ import RegisterPage from './pages/RegisterPage'
 import ExplorerPage from './pages/ExplorerPage'
 import MonProfilPage from './pages/MonProfilPage'
 import ProfilPage from './pages/ProfilPage'
+import ExplorerRecettePage from './pages/ExplorerRecettePage'
 
 const PROTECTED_ROUTES = [
   { path: '/', element: <BibliothequeePage /> },
@@ -25,6 +26,8 @@ const PROTECTED_ROUTES = [
   { path: '/explorer', element: <ExplorerPage /> },
   { path: '/mon-profil', element: <MonProfilPage /> },
   { path: '/profil/:username', element: <ProfilPage /> },
+  { path: '/explorer/recette/:id', element: <ExplorerRecettePage /> },
+  
 ]
 
 function App() {
