@@ -15,6 +15,8 @@ import ExplorerPage from './pages/ExplorerPage'
 import MonProfilPage from './pages/MonProfilPage'
 import ProfilPage from './pages/ProfilPage'
 import ExplorerRecettePage from './pages/ExplorerRecettePage'
+import { Toast } from './components/Toast'
+import { useToastStore } from './store/toastStore'
 
 const PROTECTED_ROUTES = [
   { path: '/', element: <BibliothequeePage /> },
@@ -32,6 +34,7 @@ const PROTECTED_ROUTES = [
 
 function App() {
   const { initialize } = useAuthStore()
+  const { toasts, removeToast } = useToastStore()
 
   useEffect(() => {
     initialize()
@@ -39,7 +42,8 @@ function App() {
 
   return (
     <HashRouter>
-      <div className="min-h-screen bg-background">
+      <Toast toasts={toasts} onRemove={removeToast} />
+      <div className="min-h-screen bg-background">  
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />

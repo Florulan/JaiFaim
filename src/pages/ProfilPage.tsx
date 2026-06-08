@@ -5,6 +5,7 @@ import { getProfileByUsername, getPublicRecipesByUser } from '../services/profil
 import { getFriendshipStatus, sendFriendRequest, acceptFriendRequest, removeFriend, type FriendshipStatus } from '../services/friendshipService'
 import type { Profile } from '../types/supabase'
 import type { Recipe } from '../types'
+import { toast } from '../store/toastStore'
 
 export default function ProfilPage() {
   const { username } = useParams<{ username: string }>()
@@ -35,20 +36,35 @@ export default function ProfilPage() {
   }, [username])
 
   const handleFriendAction = async () => {
-    if (!profile) return
-    setIsUpdating(true)
-    if (friendshipStatus === 'none') {
-      await sendFriendRequest(profile.id)
+  if (!profile) return
+  setIsUpdating(true)
+  if (friendshipStatus === 'none') {
+    const { error } = await sendFriendRequest(profile.id)
+    if (!error) {
       setFriendshipStatus('pending_sent')
-    } else if (friendshipStatus === 'pending_received') {
-      await acceptFriendRequest(profile.id)
-      setFriendshipStatus('accepted')
-    } else if (friendshipStatus === 'accepted' || friendshipStatus === 'pending_sent') {
-      await removeFriend(profile.id)
-      setFriendshipStatus('none')
+      toast.success('Demande envoyée !')
+    } else {
+      toast.error('Erreur lors de la demande')
     }
-    setIsUpdating(false)
+  } else if (friendshipStatus === 'pending_received') {
+    const { error } = await acceptFriendRequest(profile.id)
+    if (!error) {
+      setFriendshipStatus('accepted')
+      toast.success('Ami ajouté !')
+    } else {
+      toast.error('Erreur')
+    }
+  } else if (friendshipStatus === 'accepted' || friendshipStatus === 'pending_sent') {
+    const { error } = await removeFriend(profile.id)
+    if (!error) {
+      setFriendshipStatus('none')
+      toast.info('Ami retiré')
+    } else {
+      toast.error('Erreur')
+    }
   }
+  setIsUpdating(false)
+}
 
   const friendButtonConfig = {
     none: { label: 'Suivre', icon: UserPlus, className: 'bg-primary text-primary-foreground' },
