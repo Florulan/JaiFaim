@@ -7,7 +7,12 @@ export interface PublicRecipe extends Recipe {
   owner_display_name: string | null
 }
 
-export async function getPublicRecipes(query?: string, tag?: RecipeTag): Promise<PublicRecipe[]> {
+export async function getPublicRecipes(
+  query?: string,
+  tag?: RecipeTag,
+  page: number = 0,
+  limit: number = 20
+): Promise<PublicRecipe[]> {
   const { data, error } = await supabase
     .from('recipes')
     .select(`
@@ -19,7 +24,7 @@ export async function getPublicRecipes(query?: string, tag?: RecipeTag): Promise
     `)
     .eq('is_public', true)
     .order('created_at', { ascending: false })
-    .limit(50)
+    .range(page * limit, (page + 1) * limit - 1)
 
   if (error) return []
 
@@ -42,10 +47,7 @@ export async function getPublicRecipes(query?: string, tag?: RecipeTag): Promise
     owner_display_name: row.profiles?.display_name ?? null,
   })) as PublicRecipe[]
 
-  if (tag) {
-    results = results.filter((r) => r.tags.includes(tag))
-  }
-
+  if (tag) results = results.filter((r) => r.tags.includes(tag))
   if (query) {
     const q = query.toLowerCase().trim()
     results = results.filter((r) =>

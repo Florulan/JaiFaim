@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { Search, Copy, Check, UserPlus } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { getPublicRecipes, copyRecipeToMyLibrary, type PublicRecipe } from '../services/explorerService'
@@ -8,11 +8,15 @@ import type { RecipeTag } from '../types'
 import type { Profile } from '../types/supabase'
 import { useAuthStore } from '../store/authStore'
 import { useToastStore } from '../store/toastStore'
+import { SkeletonExplorerCard } from '../components/SkeletonCard'
 
 type Tab = 'recettes' | 'profils' | 'amis'
 
+const PAGE_SIZE = 20
+
 export default function ExplorerPage() {
   const { user } = useAuthStore()
+  const { addToast } = useToastStore()
   const navigate = useNavigate()
 
   const [tab, setTab] = useState<Tab>('recettes')
@@ -24,20 +28,53 @@ export default function ExplorerPage() {
   const [query, setQuery] = useState('')
   const [activeTag, setActiveTag] = useState<RecipeTag | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [page, setPage] = useState(0)
   const [copied, setCopied] = useState<string | null>(null)
-  const { addToast } = useToastStore()
+
+  const observerRef = useRef<IntersectionObserver | null>(null)
+  const bottomRef = useRef<HTMLDivElement | null>(null)
 
   const TAGS: RecipeTag[] = ['rapide', 'elabore', 'mealprep', 'dinner', 'lunch']
 
+  // Reset et rechargement quand query/tag/tab change
   useEffect(() => {
-    loadTab()
+    setRecipes([])
+    setPage(0)
+    setHasMore(true)
+    loadTab(0, true)
   }, [tab, query, activeTag])
 
-  const loadTab = async () => {
-    setIsLoading(true)
+  // Infinite scroll — observe le bas de page
+  useEffect(() => {
+    if (tab !== 'recettes') return
+
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isLoadingMore) {
+          loadMore()
+        }
+      },
+      { threshold: 0.1 }
+    )
+
+    if (bottomRef.current) observerRef.current.observe(bottomRef.current)
+    return () => observerRef.current?.disconnect()
+  }, [hasMore, isLoadingMore, tab, recipes.length])
+
+  const loadTab = async (pageNum: number = 0, reset: boolean = false) => {
+    if (pageNum === 0) setIsLoading(true)
+    else setIsLoadingMore(true)
+
     if (tab === 'recettes') {
-      const results = await getPublicRecipes(query || undefined, activeTag ?? undefined)
-      setRecipes(results)
+      const results = await getPublicRecipes(query || undefined, activeTag ?? undefined, pageNum, PAGE_SIZE)
+      if (reset || pageNum === 0) {
+        setRecipes(results)
+      } else {
+        setRecipes((prev) => [...prev, ...results])
+      }
+      setHasMore(results.length === PAGE_SIZE)
     } else if (tab === 'profils') {
       const results = await searchProfiles(query)
       setProfiles(results)
@@ -51,20 +88,28 @@ export default function ExplorerPage() {
       setFriendRecipes(fr as PublicRecipe[])
       setPendingRequests(pr)
     }
+
     setIsLoading(false)
+    setIsLoadingMore(false)
   }
 
+  const loadMore = useCallback(() => {
+    const nextPage = page + 1
+    setPage(nextPage)
+    loadTab(nextPage)
+  }, [page, tab, query, activeTag])
+
   const handleCopy = async (e: React.MouseEvent, recipe: PublicRecipe) => {
-  e.stopPropagation()
-  const { error } = await copyRecipeToMyLibrary(recipe.id)
-  if (!error) {
-    setCopied(recipe.id)
-    addToast('Recette ajoutée à ta bibliothèque !', 'success')
-    setTimeout(() => setCopied(null), 2000)
-  } else {
-    addToast('Erreur lors de la copie ', 'error')
+    e.stopPropagation()
+    const { error } = await copyRecipeToMyLibrary(recipe.id)
+    if (!error) {
+      setCopied(recipe.id)
+      addToast('Recette ajoutée à ta bibliothèque !', 'success')
+      setTimeout(() => setCopied(null), 2000)
+    } else {
+      addToast('Erreur lors de la copie', 'error')
+    }
   }
-}
 
   return (
     <div className="min-h-screen bg-background">
@@ -73,7 +118,6 @@ export default function ExplorerPage() {
           <h1 className="text-xl font-bold text-foreground">Explorer</h1>
         </div>
 
-        {/* Onglets */}
         <div className="flex border-b border-border -mx-4 px-4 gap-4 mb-3">
           {(['recettes', 'profils', 'amis'] as Tab[]).map((t) => (
             <button
@@ -88,7 +132,6 @@ export default function ExplorerPage() {
           ))}
         </div>
 
-        {/* Barre de recherche — cachée pour l'onglet Amis */}
         {tab !== 'amis' && (
           <div className="relative mb-3">
             <Search size={16} className="absolute left-3 top-3 text-muted-foreground" />
@@ -102,7 +145,6 @@ export default function ExplorerPage() {
           </div>
         )}
 
-        {/* Filtres tags — seulement pour recettes */}
         {tab === 'recettes' && (
           <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-hide">
             <button
@@ -126,12 +168,11 @@ export default function ExplorerPage() {
 
       <div className="px-4 py-4 pb-8">
         {isLoading ? (
-          <div className="flex justify-center py-16">
-            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <div className="space-y-3">
+            {[1,2,3,4,5].map((i) => <SkeletonExplorerCard key={i} />)}
           </div>
         ) : (
           <>
-            {/* Onglet Recettes */}
             {tab === 'recettes' && (
               recipes.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -140,52 +181,59 @@ export default function ExplorerPage() {
                   <p className="text-muted-foreground text-sm mt-1">Rends tes recettes publiques pour les partager</p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {recipes.map((recipe) => {
-                    const isOwn = recipe.owner_username === user?.email?.split('@')[0]
-                    const isCopied = copied === recipe.id
-                    return (
-                      <div
-                        key={recipe.id}
-                        onClick={() => navigate(`/explorer/recette/${recipe.id}`)}
-                        className="bg-card rounded-2xl border border-border p-4 space-y-3 cursor-pointer active:scale-95 transition-transform"
-                      >
-                        <div className="flex items-start gap-3">
-                          <span className="text-3xl">{recipe.emoji}</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-foreground truncate">{recipe.name}</p>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              par <button onClick={(e) => { e.stopPropagation(); navigate(`/profil/${recipe.owner_username}`) }} className="text-primary hover:underline">@{recipe.owner_username}</button> · {recipe.macros.kcal} kcal · {recipe.prep_time + recipe.cook_time} min
-                            </p>
+                <>
+                  <div className="space-y-3">
+                    {recipes.map((recipe) => {
+                      const isOwn = recipe.owner_username === user?.email?.split('@')[0]
+                      const isCopied = copied === recipe.id
+                      return (
+                        <div
+                          key={recipe.id}
+                          onClick={() => navigate(`/explorer/recette/${recipe.id}`)}
+                          className="bg-card rounded-2xl border border-border p-4 space-y-3 cursor-pointer active:scale-95 transition-transform"
+                        >
+                          <div className="flex items-start gap-3">
+                            <span className="text-3xl">{recipe.emoji}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-foreground truncate">{recipe.name}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                par <button onClick={(e) => { e.stopPropagation(); navigate(`/profil/${recipe.owner_username}`) }} className="text-primary hover:underline">@{recipe.owner_username}</button> · {recipe.macros.kcal} kcal · {recipe.prep_time + recipe.cook_time} min
+                              </p>
+                            </div>
+                            {!isOwn && (
+                              <button
+                                onClick={(e) => handleCopy(e, recipe)}
+                                disabled={isCopied}
+                                className={`shrink-0 flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl transition-colors ${isCopied ? 'bg-primary/10 text-primary' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+                              >
+                                {isCopied ? <Check size={13} /> : <Copy size={13} />}
+                                {isCopied ? 'Copié !' : 'Copier'}
+                              </button>
+                            )}
                           </div>
-                          {!isOwn && (
-                            <button
-                              onClick={(e) => handleCopy(e, recipe)}
-                              disabled={isCopied}
-                              className={`shrink-0 flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl transition-colors ${isCopied ? 'bg-primary/10 text-primary' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
-                            >
-                              {isCopied ? <Check size={13} /> : <Copy size={13} />}
-                              {isCopied ? 'Copié !' : 'Copier'}
-                            </button>
+                          {recipe.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5">
+                              {recipe.tags.map((tag) => (
+                                <span key={tag} className="text-[10px] bg-secondary text-muted-foreground px-2 py-0.5 rounded-full">
+                                  {RECIPE_TAG_LABELS[tag]}
+                                </span>
+                              ))}
+                            </div>
                           )}
                         </div>
-                        {recipe.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5">
-                            {recipe.tags.map((tag) => (
-                              <span key={tag} className="text-[10px] bg-secondary text-muted-foreground px-2 py-0.5 rounded-full">
-                                {RECIPE_TAG_LABELS[tag]}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
+                      )
+                    })}
+                  </div>
+                  {/* Sentinel pour infinite scroll */}
+                  <div ref={bottomRef} className="py-4 flex justify-center">
+                    {isLoadingMore && (
+                      <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    )}
+                  </div>
+                </>
               )
             )}
 
-            {/* Onglet Profils */}
             {tab === 'profils' && (
               profiles.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -217,10 +265,9 @@ export default function ExplorerPage() {
                 </div>
               )
             )}
-            {/* Onglet Amis */}
+
             {tab === 'amis' && (
               <div className="space-y-6">
-                {/* Demandes en attente */}
                 {pendingRequests.length > 0 && (
                   <div className="space-y-2">
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
@@ -248,7 +295,6 @@ export default function ExplorerPage() {
                   </div>
                 )}
 
-                {/* Amis */}
                 {friends.length > 0 && (
                   <div className="space-y-2">
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
@@ -276,7 +322,6 @@ export default function ExplorerPage() {
                   </div>
                 )}
 
-                {/* Recettes des amis */}
                 {friendRecipes.length > 0 && (
                   <div className="space-y-3">
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
