@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { X, ChevronRight, ChevronLeft, Sparkles, RefreshCw } from 'lucide-react'
-import { generatePlanningWithAI, type PlanningAIResult } from '../services/claudeService'
+import { generatePlanningWithAI, type PlanningAIResult, getApiKey } from '../services/claudeService'
+import { generatePlanning } from '../services/planningService'
 import { getAllRecipes } from '../services/recipeService'
 import { useAuthStore } from '../store/authStore'
 import { formatDayLabel } from '../lib/dates'
@@ -64,8 +65,9 @@ export function PlanningWizard({ dates, onClose, onValidate }: PlanningWizardPro
 
     try {
       const macrosTarget = profile?.macros_target ?? { kcal: 2200, p: 160, g: 220, l: 75 }
+      const hasApiKey = !!getApiKey()
 
-      // Slots imposés → déjà dans generatedSlots
+      // Slots imposés
       const imposedSlots: GeneratedSlot[] = []
       for (const [key, recipeId] of imposedMap.entries()) {
         const [date, mealType] = key.split('_') as [string, 'lunch' | 'dinner']
@@ -73,10 +75,7 @@ export function PlanningWizard({ dates, onClose, onValidate }: PlanningWizardPro
         if (recipe) imposedSlots.push({ date, mealType, recipeId, recipe })
       }
 
-      // Slots à générer par l'IA (ceux non imposés)
       const daysToFill = selectedSlots.filter((s) => !imposedMap.has(slotKey(s.date, s.mealType)))
-
-      // Déjà planifiés = les imposés (pour que l'IA rééquilibre)
       const alreadyPlanned = imposedSlots.map((s) => ({
         date: s.date,
         mealType: s.mealType,
@@ -84,69 +83,87 @@ export function PlanningWizard({ dates, onClose, onValidate }: PlanningWizardPro
         macros: s.recipe.macros,
       }))
 
-      let aiResults: PlanningAIResult[] = []
+      let aiSlots: GeneratedSlot[] = []
 
       if (daysToFill.length > 0) {
-        aiResults = await generatePlanningWithAI({
-          recipes: allRecipes,
-          macrosTarget,
-          daysToFill,
-          alreadyPlanned,
-          noRepeatDays: profile?.no_repeat_days ?? 10,
-        })
-      }
-
-      // Assembler tous les slots
-      const allSlots: GeneratedSlot[] = [...imposedSlots]
-
-      for (const result of aiResults) {
-        const recipe = allRecipes.find((r) => r.id === result.recipeId)
-        if (recipe) {
-          allSlots.push({
-            date: result.date,
-            mealType: result.mealType,
-            recipeId: result.recipeId,
-            recipe,
-            reason: result.reason,
+        if (hasApiKey) {
+          // Mode IA
+          const results: PlanningAIResult[] = await generatePlanningWithAI({
+            recipes: allRecipes,
+            macrosTarget,
+            daysToFill,
+            alreadyPlanned,
+            noRepeatDays: profile?.no_repeat_days ?? 10,
           })
+          for (const result of results) {
+            const recipe = allRecipes.find((r) => r.id === result.recipeId)
+            if (recipe) aiSlots.push({ date: result.date, mealType: result.mealType, recipeId: recipe.id, recipe, reason: result.reason })
+          }
+        } else {
+          // Fallback algorithme local
+          const generated = await generatePlanning({
+            weekStart: new Date(daysToFill[0].date),
+            selectedSlots: daysToFill,
+            imposedRecipes: [],
+            noRepeatDays: profile?.no_repeat_days ?? 10,
+          })
+          for (const slot of generated) {
+            aiSlots.push({ date: slot.date, mealType: slot.mealType, recipeId: slot.recipeId, recipe: slot.recipe })
+          }
         }
       }
 
-      setGeneratedSlots(allSlots)
+      setGeneratedSlots([...imposedSlots, ...aiSlots])
       setStep(3)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erreur de génération')
     } finally {
       setIsGenerating(false)
     }
-  }
+  } 
 
   const regenerateSlot = async (date: string, mealType: 'lunch' | 'dinner') => {
     const key = slotKey(date, mealType)
     if (imposedMap.has(key)) return
 
     try {
+      const hasApiKey = !!getApiKey()
       const macrosTarget = profile?.macros_target ?? { kcal: 2200, p: 160, g: 220, l: 75 }
       const alreadyPlanned = generatedSlots
         .filter((s) => !(s.date === date && s.mealType === mealType))
         .map((s) => ({ date: s.date, mealType: s.mealType, recipeName: s.recipe.name, macros: s.recipe.macros }))
 
-      const results = await generatePlanningWithAI({
-        recipes: allRecipes,
-        macrosTarget,
-        daysToFill: [{ date, mealType }],
-        alreadyPlanned,
-        noRepeatDays: profile?.no_repeat_days ?? 10,
-      })
-
-      if (results[0]) {
-        const recipe = allRecipes.find((r) => r.id === results[0].recipeId)
-        if (recipe) {
-          setGeneratedSlots((prev) =>
-            prev.map((s) =>
-              s.date === date && s.mealType === mealType
+      if (hasApiKey) {
+        const results = await generatePlanningWithAI({
+          recipes: allRecipes,
+          macrosTarget,
+          daysToFill: [{ date, mealType }],
+          alreadyPlanned,
+          noRepeatDays: profile?.no_repeat_days ?? 10,
+        })
+        if (results[0]) {
+          const recipe = allRecipes.find((r) => r.id === results[0].recipeId)
+          if (recipe) {
+            setGeneratedSlots((prev) =>
+              prev.map((s) => s.date === date && s.mealType === mealType
                 ? { date, mealType, recipeId: recipe.id, recipe, reason: results[0].reason }
                 : s
+              )
+            )
+          }
+        }
+      } else {
+        const generated = await generatePlanning({
+          weekStart: new Date(date),
+          selectedSlots: [{ date, mealType }],
+          imposedRecipes: [],
+          noRepeatDays: profile?.no_repeat_days ?? 10,
+        })
+        if (generated[0]) {
+          setGeneratedSlots((prev) =>
+            prev.map((s) => s.date === date && s.mealType === mealType
+              ? { date, mealType, recipeId: generated[0].recipeId, recipe: generated[0].recipe }
+              : s
             )
           )
         }
