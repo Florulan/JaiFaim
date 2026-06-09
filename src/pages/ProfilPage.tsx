@@ -6,6 +6,7 @@ import { getFriendshipStatus, sendFriendRequest, acceptFriendRequest, removeFrie
 import type { Profile } from '../types/supabase'
 import type { Recipe } from '../types'
 import { useToastStore  } from '../store/toastStore'
+import { SkeletonProfil } from '../components/SkeletonCard'
 
 export default function ProfilPage() {
   const { username } = useParams<{ username: string }>()
@@ -75,12 +76,20 @@ export default function ProfilPage() {
   }
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="sticky top-0 bg-background z-10 px-4 pt-safe border-b border-border">
+        <div className="py-4 flex items-center gap-3">
+          <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-muted-foreground">
+            <ArrowLeft size={20} />
+          </button>
+          <div className="h-5 w-32 bg-secondary rounded-full animate-pulse" />
+        </div>
       </div>
-    )
-  }
+      <SkeletonProfil />
+    </div>
+  )
+}
 
   if (!profile) {
     return (
