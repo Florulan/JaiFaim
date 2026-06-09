@@ -3,9 +3,9 @@ import { ChevronLeft, ChevronRight, CalendarDays, Sparkles } from 'lucide-react'
 import { usePlanningStore } from '../store/planningStore'
 import { useRecipeStore } from '../store/recipeStore'
 import { WeekGrid } from '../components/WeekGrid'
-import { PlanningWizard } from '../components/PlanningWizard'
+import { PlanningWizard, type GeneratedSlot } from '../components/PlanningWizard'
 import { getWeekDays, formatWeekRange } from '../lib/dates'
-import type { GeneratedSlot } from '../services/planningService'
+
 
 export default function PlanningPage() {
   const { slots, weekStart, isLoading, loadWeek, nextWeek, prevWeek, goToToday, setSlot, removeSlot } = usePlanningStore()

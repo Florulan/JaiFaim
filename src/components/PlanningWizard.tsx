@@ -1,9 +1,18 @@
 import { useState } from 'react'
 import { X, ChevronRight, ChevronLeft, Sparkles, RefreshCw } from 'lucide-react'
-import { generatePlanning, type SlotSelection, type GeneratedSlot } from '../services/planningService'
+import { generatePlanningWithAI, type PlanningAIResult } from '../services/claudeService'
 import { getAllRecipes } from '../services/recipeService'
+import { useAuthStore } from '../store/authStore'
 import { formatDayLabel } from '../lib/dates'
 import type { Recipe } from '../types'
+
+export interface GeneratedSlot {
+  date: string
+  mealType: 'lunch' | 'dinner'
+  recipeId: string
+  recipe: Recipe
+  reason?: string
+}
 
 interface PlanningWizardProps {
   weekStart: Date
@@ -14,9 +23,10 @@ interface PlanningWizardProps {
 
 const DAY_MEALS = ['lunch', 'dinner'] as const
 
-export function PlanningWizard({ weekStart, dates, onClose, onValidate }: PlanningWizardProps) {
+export function PlanningWizard({ dates, onClose, onValidate }: PlanningWizardProps) {
+  const { profile } = useAuthStore()
   const [step, setStep] = useState<1 | 2 | 3>(1)
-  const [selectedSlots, setSelectedSlots] = useState<SlotSelection[]>([])
+  const [selectedSlots, setSelectedSlots] = useState<{ date: string; mealType: 'lunch' | 'dinner' }[]>([])
   const [allRecipes, setAllRecipes] = useState<Recipe[]>([])
   const [imposedMap, setImposedMap] = useState<Map<string, string>>(new Map())
   const [generatedSlots, setGeneratedSlots] = useState<GeneratedSlot[]>([])
@@ -24,6 +34,7 @@ export function PlanningWizard({ weekStart, dates, onClose, onValidate }: Planni
   const [isSaving, setIsSaving] = useState(false)
   const [pickerSlotKey, setPickerSlotKey] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [error, setError] = useState<string | null>(null)
 
   function slotKey(date: string, mealType: 'lunch' | 'dinner') {
     return date + '_' + mealType
@@ -49,34 +60,99 @@ export function PlanningWizard({ weekStart, dates, onClose, onValidate }: Planni
 
   const goToStep3 = async () => {
     setIsGenerating(true)
-    const imposed = Array.from(imposedMap.entries()).map(([key, recipeId]) => ({ slotKey: key, recipeId }))
-    const slots = await generatePlanning({
-      weekStart,
-      selectedSlots,
-      imposedRecipes: imposed,
-      noRepeatDays: 10,
-    })
-    setGeneratedSlots(slots)
-    setIsGenerating(false)
-    setStep(3)
+    setError(null)
+
+    try {
+      const macrosTarget = profile?.macros_target ?? { kcal: 2200, p: 160, g: 220, l: 75 }
+
+      // Slots imposés → déjà dans generatedSlots
+      const imposedSlots: GeneratedSlot[] = []
+      for (const [key, recipeId] of imposedMap.entries()) {
+        const [date, mealType] = key.split('_') as [string, 'lunch' | 'dinner']
+        const recipe = allRecipes.find((r) => r.id === recipeId)
+        if (recipe) imposedSlots.push({ date, mealType, recipeId, recipe })
+      }
+
+      // Slots à générer par l'IA (ceux non imposés)
+      const daysToFill = selectedSlots.filter((s) => !imposedMap.has(slotKey(s.date, s.mealType)))
+
+      // Déjà planifiés = les imposés (pour que l'IA rééquilibre)
+      const alreadyPlanned = imposedSlots.map((s) => ({
+        date: s.date,
+        mealType: s.mealType,
+        recipeName: s.recipe.name,
+        macros: s.recipe.macros,
+      }))
+
+      let aiResults: PlanningAIResult[] = []
+
+      if (daysToFill.length > 0) {
+        aiResults = await generatePlanningWithAI({
+          recipes: allRecipes,
+          macrosTarget,
+          daysToFill,
+          alreadyPlanned,
+          noRepeatDays: profile?.no_repeat_days ?? 10,
+        })
+      }
+
+      // Assembler tous les slots
+      const allSlots: GeneratedSlot[] = [...imposedSlots]
+
+      for (const result of aiResults) {
+        const recipe = allRecipes.find((r) => r.id === result.recipeId)
+        if (recipe) {
+          allSlots.push({
+            date: result.date,
+            mealType: result.mealType,
+            recipeId: result.recipeId,
+            recipe,
+            reason: result.reason,
+          })
+        }
+      }
+
+      setGeneratedSlots(allSlots)
+      setStep(3)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Erreur de génération')
+    } finally {
+      setIsGenerating(false)
+    }
   }
 
   const regenerateSlot = async (date: string, mealType: 'lunch' | 'dinner') => {
     const key = slotKey(date, mealType)
-    const isImposed = imposedMap.has(key)
-    if (isImposed) return
+    if (imposedMap.has(key)) return
 
-    const imposed = Array.from(imposedMap.entries()).map(([k, recipeId]) => ({ slotKey: k, recipeId }))
-    const newSlots = await generatePlanning({
-      weekStart,
-      selectedSlots: [{ date, mealType }],
-      imposedRecipes: imposed,
-      noRepeatDays: 10,
-    })
-    if (newSlots[0]) {
-      setGeneratedSlots((prev) =>
-        prev.map((s) => s.date === date && s.mealType === mealType ? newSlots[0] : s)
-      )
+    try {
+      const macrosTarget = profile?.macros_target ?? { kcal: 2200, p: 160, g: 220, l: 75 }
+      const alreadyPlanned = generatedSlots
+        .filter((s) => !(s.date === date && s.mealType === mealType))
+        .map((s) => ({ date: s.date, mealType: s.mealType, recipeName: s.recipe.name, macros: s.recipe.macros }))
+
+      const results = await generatePlanningWithAI({
+        recipes: allRecipes,
+        macrosTarget,
+        daysToFill: [{ date, mealType }],
+        alreadyPlanned,
+        noRepeatDays: profile?.no_repeat_days ?? 10,
+      })
+
+      if (results[0]) {
+        const recipe = allRecipes.find((r) => r.id === results[0].recipeId)
+        if (recipe) {
+          setGeneratedSlots((prev) =>
+            prev.map((s) =>
+              s.date === date && s.mealType === mealType
+                ? { date, mealType, recipeId: recipe.id, recipe, reason: results[0].reason }
+                : s
+            )
+          )
+        }
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Erreur')
     }
   }
 
@@ -90,7 +166,7 @@ export function PlanningWizard({ weekStart, dates, onClose, onValidate }: Planni
     r.name.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  // ─── Etape 1 : Selection des slots ───────────────────────────
+  // ─── Étape 1 ────────────────────────────────────────────────
   if (step === 1) {
     return (
       <div className="fixed inset-0 bg-background z-[60] flex flex-col">
@@ -98,7 +174,7 @@ export function PlanningWizard({ weekStart, dates, onClose, onValidate }: Planni
           <button onClick={onClose} className="p-2 -ml-2 text-muted-foreground"><X size={20} /></button>
           <div className="flex-1">
             <h2 className="font-semibold text-foreground">Planifier ma semaine</h2>
-            <p className="text-xs text-muted-foreground">Etape 1 — Quels repas veux-tu planifier ?</p>
+            <p className="text-xs text-muted-foreground">Étape 1 — Quels repas veux-tu planifier ?</p>
           </div>
           <div className="flex gap-1">
             <div className="w-2 h-2 rounded-full bg-primary" />
@@ -125,12 +201,9 @@ export function PlanningWizard({ weekStart, dates, onClose, onValidate }: Planni
                       <button
                         key={mealType}
                         onClick={() => toggleSlot(date, mealType)}
-                        className={"py-2.5 rounded-xl text-xs font-medium border-2 transition-colors " +
-                          (selected
-                            ? 'bg-primary text-primary-foreground border-primary'
-                            : 'bg-secondary text-muted-foreground border-transparent')}
+                        className={`py-2.5 rounded-xl text-xs font-medium border-2 transition-colors ${selected ? 'bg-primary text-primary-foreground border-primary' : 'bg-secondary text-muted-foreground border-transparent'}`}
                       >
-                        {mealType === 'lunch' ? 'Dejeuner' : 'Diner'}
+                        {mealType === 'lunch' ? 'Déjeuner' : 'Dîner'}
                       </button>
                     )
                   })}
@@ -142,7 +215,7 @@ export function PlanningWizard({ weekStart, dates, onClose, onValidate }: Planni
 
         <div className="shrink-0 px-4 py-4 border-t border-border bg-background">
           <p className="text-xs text-muted-foreground text-center mb-3">
-            {selectedSlots.length} repas selectionne{selectedSlots.length > 1 ? 's' : ''}
+            {selectedSlots.length} repas sélectionné{selectedSlots.length > 1 ? 's' : ''}
           </p>
           <button
             onClick={goToStep2}
@@ -156,7 +229,7 @@ export function PlanningWizard({ weekStart, dates, onClose, onValidate }: Planni
     )
   }
 
-  // ─── Etape 2 : Recettes imposees ─────────────────────────────
+  // ─── Étape 2 ────────────────────────────────────────────────
   if (step === 2) {
     return (
       <div className="fixed inset-0 bg-background z-[60] flex flex-col">
@@ -164,7 +237,7 @@ export function PlanningWizard({ weekStart, dates, onClose, onValidate }: Planni
           <button onClick={() => setStep(1)} className="p-2 -ml-2 text-muted-foreground"><ChevronLeft size={20} /></button>
           <div className="flex-1">
             <h2 className="font-semibold text-foreground">Planifier ma semaine</h2>
-            <p className="text-xs text-muted-foreground">Etape 2 — Des recettes a imposer ? (optionnel)</p>
+            <p className="text-xs text-muted-foreground">Étape 2 — Des recettes à imposer ? (optionnel)</p>
           </div>
           <div className="flex gap-1">
             <div className="w-2 h-2 rounded-full bg-muted" />
@@ -208,7 +281,7 @@ export function PlanningWizard({ weekStart, dates, onClose, onValidate }: Planni
         ) : (
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
             <p className="text-xs text-muted-foreground pb-2">
-              Appuie sur un repas pour lui assigner une recette precise. Laisse vide et l'IA choisit.
+              Appuie sur un repas pour lui assigner une recette précise. Laisse vide et l'IA choisit en fonction de tes macros.
             </p>
             {selectedSlots.map((slot) => {
               const key = slotKey(slot.date, slot.mealType)
@@ -222,7 +295,7 @@ export function PlanningWizard({ weekStart, dates, onClose, onValidate }: Planni
                     <span className="text-xs font-bold">{num}</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-muted-foreground capitalize">{day} — {slot.mealType === 'lunch' ? 'Dejeuner' : 'Diner'}</p>
+                    <p className="text-xs text-muted-foreground capitalize">{day} — {slot.mealType === 'lunch' ? 'Déjeuner' : 'Dîner'}</p>
                     {imposedRecipe ? (
                       <p className="text-sm font-medium text-foreground truncate">{imposedRecipe.emoji} {imposedRecipe.name}</p>
                     ) : (
@@ -252,16 +325,21 @@ export function PlanningWizard({ weekStart, dates, onClose, onValidate }: Planni
         )}
 
         {!pickerSlotKey && (
-          <div className="px-4 py-4 border-t border-border">
+          <div className="px-4 py-4 border-t border-border space-y-2">
+            {error && (
+              <div className="bg-destructive/10 border border-destructive/20 rounded-2xl px-4 py-3">
+                <p className="text-sm text-destructive">{error}</p>
+              </div>
+            )}
             <button
               onClick={goToStep3}
               disabled={isGenerating}
               className="w-full py-3 rounded-2xl bg-primary text-primary-foreground font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {isGenerating ? (
-                <><div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" /> Generation...</>
+                <><div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" /> L'IA réfléchit...</>
               ) : (
-                <><Sparkles size={18} /> Generer le planning</>
+                <><Sparkles size={18} /> Générer avec l'IA</>
               )}
             </button>
           </div>
@@ -270,14 +348,14 @@ export function PlanningWizard({ weekStart, dates, onClose, onValidate }: Planni
     )
   }
 
-  // ─── Etape 3 : Validation ─────────────────────────────────────
+  // ─── Étape 3 ────────────────────────────────────────────────
   return (
     <div className="fixed inset-0 bg-background z-[60] flex flex-col">
       <div className="sticky top-0 bg-background border-b border-border px-4 py-4 flex items-center gap-3">
         <button onClick={() => setStep(2)} className="p-2 -ml-2 text-muted-foreground"><ChevronLeft size={20} /></button>
         <div className="flex-1">
           <h2 className="font-semibold text-foreground">Planifier ma semaine</h2>
-          <p className="text-xs text-muted-foreground">Etape 3 — Valide ton planning</p>
+          <p className="text-xs text-muted-foreground">Étape 3 — Valide ton planning</p>
         </div>
         <div className="flex gap-1">
           <div className="w-2 h-2 rounded-full bg-muted" />
@@ -296,8 +374,11 @@ export function PlanningWizard({ weekStart, dates, onClose, onValidate }: Planni
                 <span className="text-xs font-bold">{num}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs text-muted-foreground capitalize">{day} — {slot.mealType === 'lunch' ? 'Dejeuner' : 'Diner'}</p>
+                <p className="text-xs text-muted-foreground capitalize">{day} — {slot.mealType === 'lunch' ? 'Déjeuner' : 'Dîner'}</p>
                 <p className="text-sm font-medium text-foreground truncate">{slot.recipe.emoji} {slot.recipe.name}</p>
+                {slot.reason && (
+                  <p className="text-[10px] text-primary mt-0.5 italic">{slot.reason}</p>
+                )}
                 <p className="text-[10px] text-muted-foreground">{slot.recipe.macros.kcal} kcal · {slot.recipe.macros.p}g prot</p>
               </div>
               {!isImposed && (
@@ -309,7 +390,7 @@ export function PlanningWizard({ weekStart, dates, onClose, onValidate }: Planni
                 </button>
               )}
               {isImposed && (
-                <span className="text-[10px] bg-primary/10 text-primary px-2 py-1 rounded-full">Impose</span>
+                <span className="text-[10px] bg-primary/10 text-primary px-2 py-1 rounded-full">Imposé</span>
               )}
             </div>
           )
@@ -324,9 +405,7 @@ export function PlanningWizard({ weekStart, dates, onClose, onValidate }: Planni
         >
           {isSaving ? (
             <><div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" /> Enregistrement...</>
-          ) : (
-            'Valider le planning'
-          )}
+          ) : 'Valider le planning'}
         </button>
       </div>
     </div>

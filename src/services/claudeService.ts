@@ -99,3 +99,95 @@ export async function generateRecipe(
     throw new Error('Reponse IA invalide. Reessaie.')
   }
 }
+
+export interface PlanningAIRequest {
+  recipes: Recipe[]
+  macrosTarget: { kcal: number; p: number; g: number; l: number }
+  daysToFill: { date: string; mealType: 'lunch' | 'dinner' }[]
+  alreadyPlanned: { date: string; mealType: 'lunch' | 'dinner'; recipeName: string; macros: { kcal: number; p: number; g: number; l: number } }[]
+  noRepeatDays: number
+}
+
+export interface PlanningAIResult {
+  date: string
+  mealType: 'lunch' | 'dinner'
+  recipeId: string
+  reason: string
+}
+
+export async function generatePlanningWithAI(request: PlanningAIRequest): Promise<PlanningAIResult[]> {
+  const apiKey = getApiKey()
+  if (!apiKey) throw new Error('Clé API manquante. Configure-la dans les paramètres.')
+
+  const { recipes, macrosTarget, daysToFill, alreadyPlanned, noRepeatDays } = request
+
+  const recipesSummary = recipes.map((r) => ({
+    id: r.id,
+    name: r.name,
+    tags: r.tags,
+    kcal: r.macros.kcal,
+    p: r.macros.p,
+    g: r.macros.g,
+    l: r.macros.l,
+  }))
+
+  const systemPrompt = `Tu es un expert en nutrition et planification de repas. Tu génères des suggestions de repas équilibrées en JSON.
+Réponds UNIQUEMENT avec un tableau JSON valide, sans markdown, sans backticks, sans texte avant ou après.
+Format : [{ "date": "YYYY-MM-DD", "mealType": "lunch"|"dinner", "recipeId": "uuid", "reason": "string court" }]`
+
+  const userPrompt = `Objectifs macros QUOTIDIENS de l'utilisateur :
+- Calories : ${macrosTarget.kcal} kcal
+- Protéines : ${macrosTarget.p}g
+- Glucides : ${macrosTarget.g}g
+- Lipides : ${macrosTarget.l}g
+
+Repas déjà planifiés cette semaine (ne pas dépasser les macros avec ces repas inclus) :
+${alreadyPlanned.length === 0 ? 'Aucun' : alreadyPlanned.map((s) => `- ${s.date} ${s.mealType}: ${s.recipeName} (${s.macros.kcal} kcal, ${s.macros.p}g prot)`).join('\n')}
+
+Repas à planifier :
+${daysToFill.map((s) => `- ${s.date} ${s.mealType}`).join('\n')}
+
+Recettes disponibles :
+${JSON.stringify(recipesSummary, null, 2)}
+
+Règles IMPORTANTES :
+1. Ne pas répéter une recette déjà utilisée dans les ${noRepeatDays} derniers jours
+2. Si des repas déjà planifiés sont riches en graisses (tartiflette, gratin, etc.), compenser avec des repas plus légers et protéinés
+3. Alterner les types de cuisine et de protéines
+4. Favoriser les recettes "rapide" en semaine (lundi-vendredi), "elabore" le week-end
+5. Équilibrer les macros sur la journée entre lunch et dinner
+6. La raison doit expliquer brièvement pourquoi ce choix (ex: "Léger pour compenser le gratin de hier")
+
+Génère une suggestion pour chaque repas à planifier.`
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5',
+      max_tokens: 2000,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }],
+    }),
+  })
+
+  if (!response.ok) {
+    if (response.status === 401) throw new Error('Clé API invalide.')
+    throw new Error('Erreur API : ' + response.status)
+  }
+
+  const data = await response.json()
+  const text = data.content?.[0]?.text ?? ''
+
+  try {
+    const clean = text.replace(/```json/g, '').replace(/```/g, '').trim()
+    return JSON.parse(clean) as PlanningAIResult[]
+  } catch {
+    throw new Error('Réponse IA invalide. Réessaie.')
+  }
+}

@@ -6,6 +6,7 @@ import { RecetteForm } from '../components/RecetteForm'
 import { AISaisieDrawer } from '../components/AISaisieDrawer'
 import { RECIPE_TAGS, RECIPE_TAG_LABELS, type RecipeTag } from '../types'
 import type { Recipe } from '../types'
+import { SkeletonRecipeCard } from '../components/SkeletonCard'
 
 type RecipeFormData = Omit<Recipe, 'id' | 'created_at' | 'updated_at'>
 
@@ -126,10 +127,10 @@ export default function BibliothequeePage() {
 
       <div className="px-4 pb-4">
         {isLoading ? (
-          <div className="flex justify-center py-16">
-            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : recipes.length === 0 ? (
+            <div className="grid grid-cols-2 gap-3">
+              {[1,2,3,4,5,6].map((i) => <SkeletonRecipeCard key={i} />)}
+            </div>
+          ) : recipes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <span className="text-5xl mb-4">🍽️</span>
             <p className="text-foreground font-medium">Aucune recette trouvee</p>
