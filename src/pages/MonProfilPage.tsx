@@ -13,7 +13,7 @@ interface LeftoverWithRecipe {
 }
 
 export default function MonProfilPage() {
-  const { profile, loadProfile } = useAuthStore()
+  const { profile, loadProfile, signOut } = useAuthStore()
   const navigate = useNavigate()
 
   const [isEditing, setIsEditing] = useState(false)
@@ -300,6 +300,12 @@ export default function MonProfilPage() {
         </div>
 
       </div>
+      <button
+  onClick={signOut}
+      className="w-full py-3 rounded-2xl border border-destructive text-destructive text-sm font-medium"
+    >
+      Se déconnecter
+    </button>
     </div>
   )
 }
