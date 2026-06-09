@@ -7,6 +7,7 @@ import { RECIPE_TAG_LABELS } from '../types'
 import type { RecipeTag } from '../types'
 import type { Profile } from '../types/supabase'
 import { useAuthStore } from '../store/authStore'
+import { useToastStore } from '../store/toastStore'
 
 type Tab = 'recettes' | 'profils' | 'amis'
 
@@ -24,6 +25,7 @@ export default function ExplorerPage() {
   const [activeTag, setActiveTag] = useState<RecipeTag | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [copied, setCopied] = useState<string | null>(null)
+  const { addToast } = useToastStore()
 
   const TAGS: RecipeTag[] = ['rapide', 'elabore', 'mealprep', 'dinner', 'lunch']
 
@@ -53,13 +55,16 @@ export default function ExplorerPage() {
   }
 
   const handleCopy = async (e: React.MouseEvent, recipe: PublicRecipe) => {
-    e.stopPropagation()
-    const { error } = await copyRecipeToMyLibrary(recipe.id)
-    if (!error) {
-      setCopied(recipe.id)
-      setTimeout(() => setCopied(null), 2000)
-    }
+  e.stopPropagation()
+  const { error } = await copyRecipeToMyLibrary(recipe.id)
+  if (!error) {
+    setCopied(recipe.id)
+    addToast('Recette ajoutée à ta bibliothèque !', 'success')
+    setTimeout(() => setCopied(null), 2000)
+  } else {
+    addToast('Erreur lors de la copie ', 'error')
   }
+}
 
   return (
     <div className="min-h-screen bg-background">

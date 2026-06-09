@@ -5,7 +5,7 @@ import { getProfileByUsername, getPublicRecipesByUser } from '../services/profil
 import { getFriendshipStatus, sendFriendRequest, acceptFriendRequest, removeFriend, type FriendshipStatus } from '../services/friendshipService'
 import type { Profile } from '../types/supabase'
 import type { Recipe } from '../types'
-import { toast } from '../store/toastStore'
+import { useToastStore  } from '../store/toastStore'
 
 export default function ProfilPage() {
   const { username } = useParams<{ username: string }>()
@@ -16,6 +16,7 @@ export default function ProfilPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [friendshipStatus, setFriendshipStatus] = useState<FriendshipStatus>('none')
   const [isUpdating, setIsUpdating] = useState(false)
+  const { addToast } = useToastStore()
 
   useEffect(() => {
     if (!username) return
@@ -42,25 +43,25 @@ export default function ProfilPage() {
     const { error } = await sendFriendRequest(profile.id)
     if (!error) {
       setFriendshipStatus('pending_sent')
-      toast.success('Demande envoyée !')
+      addToast('Demande envoyée !', 'success')
     } else {
-      toast.error('Erreur lors de la demande')
+      addToast('Erreur lors de la demande', 'error')
     }
   } else if (friendshipStatus === 'pending_received') {
     const { error } = await acceptFriendRequest(profile.id)
     if (!error) {
       setFriendshipStatus('accepted')
-      toast.success('Ami ajouté !')
+      addToast('Ami ajouté !', 'success')
     } else {
-      toast.error('Erreur')
+      addToast('Erreur lors de l\'acceptation', 'error')
     }
   } else if (friendshipStatus === 'accepted' || friendshipStatus === 'pending_sent') {
     const { error } = await removeFriend(profile.id)
     if (!error) {
       setFriendshipStatus('none')
-      toast.info('Ami retiré')
+      addToast('Ami retiré', 'info')
     } else {
-      toast.error('Erreur')
+      addToast('Erreur lors de la suppression', 'error')
     }
   }
   setIsUpdating(false)

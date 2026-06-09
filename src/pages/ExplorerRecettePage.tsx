@@ -6,6 +6,7 @@ import { copyRecipeToMyLibrary } from '../services/explorerService'
 import { useAuthStore } from '../store/authStore'
 import { RECIPE_TAG_LABELS, UNIT_LABELS, MACRO_CONFIDENCE_LABELS } from '../types'
 import type { Recipe } from '../types'
+import { useToastStore } from '../store/toastStore'
 
 interface PublicRecipeWithOwner extends Recipe {
   owner_username: string
@@ -21,6 +22,7 @@ export default function ExplorerRecettePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [copied, setCopied] = useState(false)
   const [isCopying, setIsCopying] = useState(false)
+  const { addToast } = useToastStore()
 
   useEffect(() => {
     if (!id) return
@@ -58,15 +60,18 @@ export default function ExplorerRecettePage() {
   }, [id])
 
   const handleCopy = async () => {
-    if (!recipe) return
-    setIsCopying(true)
-    const { error } = await copyRecipeToMyLibrary(recipe.id)
-    if (!error) {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    }
-    setIsCopying(false)
+  if (!recipe) return
+  setIsCopying(true)
+  const { error } = await copyRecipeToMyLibrary(recipe.id)
+  if (!error) {
+    setCopied(true)
+    addToast('Recette ajoutée à ta bibliothèque !', 'success')
+    setTimeout(() => setCopied(false), 2000)
+  } else {
+    addToast('Erreur lors de la copie ', 'error')
   }
+  setIsCopying(false)
+}
 
   const isOwn = recipe?.owner_username && user?.email?.startsWith(recipe.owner_username)
 

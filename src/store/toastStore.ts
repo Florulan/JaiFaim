@@ -20,7 +20,19 @@ export const useToastStore = create<ToastStore>((set) => ({
 
 // Helper utilisable en dehors des composants
 export const toast = {
-  success: (message: string) => useToastStore.getState().addToast(message, 'success'),
-  error: (message: string) => useToastStore.getState().addToast(message, 'error'),
-  info: (message: string) => useToastStore.getState().addToast(message, 'info'),
+  success: (message: string) => {
+    useToastStore.setState((state) => ({
+      toasts: [...state.toasts, { id: crypto.randomUUID(), message, type: 'success' as const }]
+    }))
+  },
+  error: (message: string) => {
+    useToastStore.setState((state) => ({
+      toasts: [...state.toasts, { id: crypto.randomUUID(), message, type: 'error' as const }]
+    }))
+  },
+  info: (message: string) => {
+    useToastStore.setState((state) => ({
+      toasts: [...state.toasts, { id: crypto.randomUUID(), message, type: 'info' as const }]
+    }))
+  },
 }
