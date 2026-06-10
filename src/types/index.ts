@@ -11,7 +11,19 @@ export type Unit =
   | 'piece' | 'tranche' | 'filet' | 'botte' | 'pincee'
 
 // ─── Tags recette ────────────────────────────────────────────
-export type RecipeTag = 'rapide' | 'elabore' | 'mealprep' | 'dinner' | 'lunch'
+export type RecipeTag =
+  // Existants
+  | 'rapide' | 'elabore' | 'mealprep' | 'dinner' | 'lunch'
+  // Style
+  | 'festif' | 'healthy' | 'sport' | 'streetfood'
+  // Cuisine du monde — Europe
+  | 'francais' | 'italien' | 'espagnol' | 'grec'
+  // Cuisine du monde — Asie
+  | 'japonais' | 'chinois' | 'vietnamien' | 'coreen' | 'thai' | 'indien'
+  // Cuisine du monde — Reste du monde
+  | 'mexicain' | 'americain' | 'libanais' | 'marocain'
+  // Régimes
+  | 'vegetarien' | 'pescatarien'
 
 // ─── Ingrédient structuré ────────────────────────────────────
 export interface Ingredient {
@@ -78,7 +90,14 @@ export interface UserProfile {
 // ─── Helpers de type ─────────────────────────────────────────
 export type MacrosTarget = Omit<Macros, 'confidence'>
 
-export const RECIPE_TAGS: RecipeTag[] = ['rapide', 'elabore', 'mealprep', 'dinner', 'lunch']
+export const RECIPE_TAGS: RecipeTag[] = [
+  'rapide', 'elabore', 'mealprep', 'dinner', 'lunch',
+  'festif', 'healthy', 'sport', 'streetfood',
+  'francais', 'italien', 'espagnol', 'grec',
+  'japonais', 'chinois', 'vietnamien', 'coreen', 'thai', 'indien',
+  'mexicain', 'americain', 'libanais', 'marocain',
+  'vegetarien', 'pescatarien',
+]
 
 export const RECIPE_TAG_LABELS: Record<RecipeTag, string> = {
   rapide: '⚡ Rapide',
@@ -86,6 +105,26 @@ export const RECIPE_TAG_LABELS: Record<RecipeTag, string> = {
   mealprep: '📦 Meal prep',
   dinner: '🌙 Dîner',
   lunch: '☀️ Déjeuner',
+  festif: '🎉 Festif',
+  healthy: '🥗 Healthy',
+  sport: '💪 Sport',
+  streetfood: '🥡 Street food',
+  francais: '🇫🇷 Français',
+  italien: '🇮🇹 Italien',
+  espagnol: '🇪🇸 Espagnol',
+  grec: '🇬🇷 Grec',
+  japonais: '🇯🇵 Japonais',
+  chinois: '🇨🇳 Chinois',
+  vietnamien: '🇻🇳 Vietnamien',
+  coreen: '🇰🇷 Coréen',
+  thai: '🇹🇭 Thaï',
+  indien: '🇮🇳 Indien',
+  mexicain: '🇲🇽 Mexicain',
+  americain: '🇺🇸 Américain',
+  libanais: '🇱🇧 Libanais',
+  marocain: '🇲🇦 Marocain',
+  vegetarien: '🌱 Végétarien',
+  pescatarien: '🐟 Pescatarien',
 }
 
 export const UNIT_LABELS: Record<Unit, string> = {
