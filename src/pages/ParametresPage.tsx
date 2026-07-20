@@ -104,9 +104,11 @@ export default function ParametresPage() {
 
         <section className="space-y-3">
           <div>
-            <h2 className="font-semibold text-foreground">Cle API Anthropic</h2>
-            <p className="text-xs text-muted-foreground mt-1">
-              Necessaire pour la generation de recettes par IA. Stockee uniquement sur cet appareil.
+            <h2 className="font-semibold text-foreground">Clé API Anthropic</h2>
+            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+              Cette clé active la génération de recettes par IA (la saisie intelligente).
+              Elle reste stockée uniquement dans ton navigateur, sur cet appareil, et sert
+              seulement à tes propres appels — nous ne la voyons jamais.
             </p>
           </div>
 
@@ -150,8 +152,17 @@ export default function ParametresPage() {
               </button>
             )}
           </div>
+          <a
+            href="https://console.anthropic.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block text-xs text-primary underline underline-offset-2"
+          >
+            Comment obtenir une clé Anthropic →
+          </a>
           <p className="text-xs text-muted-foreground">
-            Obtiens une cle sur console.anthropic.com. 5$ de credits suffisent pour des mois d'utilisation.
+            Crée un compte sur console.anthropic.com, puis génère une clé. Quelques euros
+            de crédit suffisent pour des mois d'utilisation.
           </p>
         </section>
 

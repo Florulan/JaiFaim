@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Sparkles, X, ChevronRight } from 'lucide-react'
-import { generateRecipe, type SaisieMode } from '../services/claudeService'
+import { generateRecipe, getApiKey, type SaisieMode } from '../services/claudeService'
+import { toast } from '../store/toastStore'
 import { RecetteForm } from './RecetteForm'
 import type { Recipe } from '../types'
 
@@ -37,9 +39,29 @@ export function AISaisieDrawer({ onClose, onSave }: AISaisieDrawerProps) {
   const [error, setError] = useState<string | null>(null)
   const [generatedRecipe, setGeneratedRecipe] = useState<Omit<Recipe, 'id' | 'created_at' | 'updated_at'> | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  // Clé lue une fois au montage : le drawer est remonté à chaque ouverture
+  const [hasApiKey] = useState(() => !!getApiKey())
+
+  // Bannière douce affichée quand aucune clé n'est configurée.
+  // On ne cache ni ne désactive rien : on informe et on renvoie vers les Paramètres.
+  const noKeyNotice = !hasApiKey ? (
+    <Link
+      to="/parametres"
+      onClick={onClose}
+      className="flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-2xl px-4 py-3 text-sm text-primary"
+    >
+      <Sparkles size={16} className="shrink-0" />
+      <span>Ajoute ta clé API dans les Paramètres pour activer la génération de recettes.</span>
+    </Link>
+  ) : null
 
   const handleGenerate = async () => {
     if (!mode || !input.trim()) return
+    // État dégradé doux : pas de clé → message clair, pas d'erreur cryptique
+    if (!getApiKey()) {
+      toast.info('Ajoute ta clé API dans les Paramètres pour activer la génération de recettes')
+      return
+    }
     setIsGenerating(true)
     setError(null)
     try {
@@ -100,6 +122,7 @@ export function AISaisieDrawer({ onClose, onSave }: AISaisieDrawerProps) {
         </div>
 
         <div className="flex-1 px-4 py-6 space-y-4">
+          {noKeyNotice}
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -156,6 +179,7 @@ export function AISaisieDrawer({ onClose, onSave }: AISaisieDrawerProps) {
       </div>
 
       <div className="flex-1 px-4 py-6 space-y-3">
+        {noKeyNotice}
         {MODES.map((m) => (
           <button
             key={m.id}
