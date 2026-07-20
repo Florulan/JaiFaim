@@ -76,17 +76,6 @@ export interface MealSlot {
   created_at: string
 }
 
-// ─── Profil utilisateur ──────────────────────────────────────
-export interface UserProfile {
-  id: 'local'                                  // toujours 'local' en V1
-  macros_target: Omit<Macros, 'confidence'>    // objectifs quotidiens
-  no_repeat_days: number                       // défaut: 10
-  week_start: 'monday' | 'sunday'             // défaut: 'monday'
-  planning_session_day: 'saturday' | 'sunday'
-  cuisine_prefs: string[]                      // injecté dans le prompt de suggestion
-  updated_at: string                           // ISO 8601
-}
-
 // ─── Helpers de type ─────────────────────────────────────────
 export type MacrosTarget = Omit<Macros, 'confidence'>
 
@@ -146,16 +135,6 @@ export const MACRO_CONFIDENCE_LABELS: Record<Macros['confidence'], string> = {
   low: '⚠️ Estimation approximative',
   medium: '〜 Estimation correcte',
   high: '✓ Estimation fiable',
-}
-
-export const DEFAULT_USER_PROFILE: UserProfile = {
-  id: 'local',
-  macros_target: { kcal: 2200, p: 160, g: 220, l: 75 },
-  no_repeat_days: 10,
-  week_start: 'monday',
-  planning_session_day: 'saturday',
-  cuisine_prefs: [],
-  updated_at: new Date().toISOString(),
 }
 
 // ─── Restes / Leftovers ──────────────────────────────────────

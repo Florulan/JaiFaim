@@ -4,3 +4,10 @@ dist
 .env.local
 .DS_Store
 *.local
+
+# Artefacts d'analyse statique (Famix) et chemins Windows url-encodés
+model.json
+d%3A/
+
+# Cache de compilation TypeScript
+*.tsbuildinfo

@@ -20,32 +20,6 @@ function rowToLeftover(row: Record<string, unknown>): LeftoverItem {
   }
 }
 
-export async function getActiveLefotovers(): Promise<LeftoverItem[]> {
-  const userId = await getCurrentUserId()
-
-  const { data, error } = await supabase
-    .from('leftovers')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('frozen', false)
-
-  if (error) throw new Error(error.message)
-  return (data ?? []).map(rowToLeftover)
-}
-
-export async function getFrozenLeftovers(): Promise<LeftoverItem[]> {
-  const userId = await getCurrentUserId()
-
-  const { data, error } = await supabase
-    .from('leftovers')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('frozen', true)
-
-  if (error) throw new Error(error.message)
-  return (data ?? []).map(rowToLeftover)
-}
-
 export async function getAllLeftovers(): Promise<LeftoverItem[]> {
   const userId = await getCurrentUserId()
 
